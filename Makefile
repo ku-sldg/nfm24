@@ -1,4 +1,4 @@
-BASE_NAME = samplepaper
+BASE_NAME = ifm23
 TEX_SRCS := $(wildcard *.tex)
 LATEX = pdflatex
 BIBTEX = bibtex
