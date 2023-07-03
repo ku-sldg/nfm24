@@ -60,11 +60,11 @@ The specification ``TPM 2.0 Keys for Device Identity and Attestation'' by the Tr
 %
 %
 \section{Introduction}
-Development and deployment of trusted systems often require definitive identification of devices. A remote entity should have confidence that a device is that which it claims to be. An ideal method for fulfulling this need is through the utilization of cryptographic keys in the Trusted Platform Module (TPM) as secure device identitifiers \cite{DevIDSpec-TCG}. A secure device identifier (DevID) is defined as an identifier that is cryptographically bound to a device \cite{DevIDSpec-IEEE}. 
+Development and deployment of trusted systems often require definitive identification of devices. A remote entity should have confidence that a device is that which it claims to be. An ideal method for fulfulling this need is through the utilization of cryptographic keys in the Trusted Platform Module (TPM) as secure device identitifiers \citep{DevIDSpec-TCG}. A secure device identifier (DevID) is defined as an identifier that is cryptographically bound to a device \citep{DevIDSpec-IEEE}. 
 A DevID must not be transferable from one device to another as that would allow distinct devices to be identified as the same. 
-Since the TPM is a secure Root of Trust for Storage \cite{TPMSpec}, it provides the necessary protections for storing these identifiers and enforcing this constraint. 
+Since the TPM is a secure Root of Trust for Storage \citep{TPMSpec}, it provides the necessary protections for storing these identifiers and enforcing this constraint. 
 
-The specification ``TPM 2.0 Keys for Device Identity and Attestation'' by the Trusted Computing Group (TCG) describes several procedures for remotely proving a key to be resident in a specific device's TPM \cite{DevIDSpec-TCG}. These procedures are carefully constructed protocols that are intended to be performed by a trusted Certificate Authority (CA) in communication with a certificate-requesting device. These protocols are designed to maintain a cryptographic evidentiary chain linking a DevID to a specific TPM \cite{DevIDSpec-TCG}. 
+The specification ``TPM 2.0 Keys for Device Identity and Attestation'' by the Trusted Computing Group (TCG) describes several procedures for remotely proving a key to be resident in a specific device's TPM \citep{DevIDSpec-TCG}. These procedures are carefully constructed protocols that are intended to be performed by a trusted Certificate Authority (CA) in communication with a certificate-requesting device. These protocols are designed to maintain a cryptographic evidentiary chain linking a DevID to a specific TPM \citep{DevIDSpec-TCG}. 
 DevID certificates provisioned by an OEM at device manufacturing time should provide definitive evidence that a key belongs to a specific device. Whereas DevID certificates provisioned by a device owner require a chain of certificates in order to verify a chain of trust to an OEM-provided root certificate. This distinction is due to differences in the respective protocols prescribed by the TCG's specification. 
 For each provisioning procedure described in the specification, the TCG outlines steps for the CA and the certificate-requesting entity to perform. Furthermore, the TCG claims that each procedure provides certain assurances. These assurances are the basis for the resulting cryptographic evidentiary chain.
 Each assurance manifests as an assertion regarding either TPM-residency, key attributes, or previously-issued certificates.
@@ -74,21 +74,21 @@ The contributions of the research presented in this thesis may be summarized as 
 
 \section{Related Work}
 The Privacy CA protocol of the TPM 1.2 has been extensively studied using various formal methods. The Privacy CA protocol was replaced by the Direct Anonymous Attestation (DAA) scheme in the TPM 2.0. Both of these protocols aim to accomplish the same fundamental purpose: allow remote authentication of a device while maintaining its anonymity. These protocols differ from the key certification protocols analyzed in my work which aim to provide individual identification of a device.
-The work of Chen et al.\ \cite{PrivacyCAAnalysis-Chen} analyzes the Privacy CA protocol in the presence of an adversary. They suggest a small modification to the protocol that enhances its security without changing the existing functionality of the TPM 1.2. I similarly suggest a small modification to the IAK provisioning procedure which requires no change to the existing functionality of the TPM 2.0.
-On the other hand, the work of Halling et al.\ \cite{PrivacyCAAnalysis-Hall,TPM12Model} analyzes the Privacy CA protocol but does not consider any specific adversary. Instead, they consider the functional correctness of the protocol and specifically examine the protocol implementation to ensure that it produces the results that it should.  
+The work of Chen et al.\ \citep{PrivacyCAAnalysis-Chen} analyzes the Privacy CA protocol in the presence of an adversary. They suggest a small modification to the protocol that enhances its security without changing the existing functionality of the TPM 1.2. I similarly suggest a small modification to the IAK provisioning procedure which requires no change to the existing functionality of the TPM 2.0.
+On the other hand, the work of Halling et al.\ \citep{PrivacyCAAnalysis-Hall,TPM12Model} analyzes the Privacy CA protocol but does not consider any specific adversary. Instead, they consider the functional correctness of the protocol and specifically examine the protocol implementation to ensure that it produces the results that it should.  
 My work has many parallels to the works of Halling et al. 
 I attempt to determine whether the implementations of certain key certification protocols result in the assurances that they should.
 Furthermore, Halling et al.\ abstractly model a large subset of the TPM 1.2 commands in the PVS specification language. They model TPM command execution as a transition system over an abstract system state. I implement this same technique in my own work but over a small subset of TPM 2.0 commands as well as several non-TPM commands. 
 
-The works of Whitefield et al.\ \cite{DAAAnalysis-Whit} and Wesemeyer et al.\ \cite{DAAAnalysis-Wes} thoroughly study the DAA scheme of the TPM 2.0. Collectively, they develop a symbolic model, a C++ implementation, and a formally-verified fix of the scheme. 
-Many other works use formal methods to examine other aspects of both the TPM 1.2 \cite{AuthAnalysis,PCRAnalysis} and 2.0 \cite{EAAnalysis,HMACAnalysis}.
+The works of Whitefield et al.\ \citep{DAAAnalysis-Whit} and Wesemeyer et al.\ \citep{DAAAnalysis-Wes} thoroughly study the DAA scheme of the TPM 2.0. Collectively, they develop a symbolic model, a C++ implementation, and a formally-verified fix of the scheme. 
+Many other works use formal methods to examine other aspects of both the TPM 1.2 \citep{AuthAnalysis,PCRAnalysis} and 2.0 \citep{EAAnalysis,HMACAnalysis}.
 These aspects include authentication, platform configuration registers (PCRs), enhanced authorization (EA), and hash-based message authentication code (HMAC) mechanisms. They utilize tools and techniques such as SAPIC, Tamarin, stateful applied pi calculus, amongst others. 
 %
 %
 %
 \section{TPM 2.0}
 A Trusted Platform Module (TPM) is a microcontroller that complies with the ISO/IEC 11889:2015 international standard.
-The TPM and its specification were designed by the Trusted Computing Group (TCG) to act as a hardware anchor for PC system security. To this end, TPMs have the abilities necessary for secure generation of keys, algorithm agility, secure storage of keys, enhanced authorization, device health attestation, device identification, NVRAM storage and more \cite{{PracticalGuide}}. 
+The TPM and its specification were designed by the Trusted Computing Group (TCG) to act as a hardware anchor for PC system security. To this end, TPMs have the abilities necessary for secure generation of keys, algorithm agility, secure storage of keys, enhanced authorization, device health attestation, device identification, NVRAM storage and more \citep{{PracticalGuide}}. 
 
 Device health attestation data provided by a TPM offers cryptographic proof of software state. Attestation data comes in the form of a quote which is a signed hash over a selection of platform configuration registers. Platform configuration registers (PCRs) store the results from a chain of boot time measurements in a way that guarantees integrity. In particular, a PCR cannot be rolled back to a previous value resulting in a measurement being undone. To tie attestation data to a specific device, the key that performed the signing operation must be cryptographically bound to that device, that is, the key must be a secure device identifier. 
 
@@ -124,14 +124,14 @@ signature hash.
 
 A restricted decryption key is called a storage key. Only storage keys
 can be used as parents to create or load child objects or to activate
-credentials \cite{PracticalGuide}. All TPMs are shipped with an
+credentials \citep{PracticalGuide}. All TPMs are shipped with an
 essential storage key: the endorsement key (EK). The EK is installed
 by the TPM manufacturer and stored in a shielded location on the
 TPM. The corresponding EK certificate serves a significant role in the
 creation of DevID certificates.
 
 \section{Secure Device Identity}
-A secure device identifier (DevID) is defined as an identifier that is cryptographically bound to a device \cite{DevIDSpec-IEEE}. A DevID must not be transferable from one device to another and must be stored in a way that protects it from modification. Since the TPM is a secure Root of Trust for Storage and protects keys against compromise, TPM keys are an ideal choice for DevIDs. 
+A secure device identifier (DevID) is defined as an identifier that is cryptographically bound to a device \citep{DevIDSpec-IEEE}. A DevID must not be transferable from one device to another and must be stored in a way that protects it from modification. Since the TPM is a secure Root of Trust for Storage and protects keys against compromise, TPM keys are an ideal choice for DevIDs. 
 The binding of a TPM key to a specific device instance is represented by a DevID certificate.
 To know when and by whom DevIDs are created, it is useful to briefly consider a simplified version of the process for creating and distributing TPM-containing devices to end users.
 \begin{enumerate}
@@ -143,7 +143,7 @@ To know when and by whom DevIDs are created, it is useful to briefly consider a 
 The provisioning of device identification in Steps \ref{ite:idDevIni}
 and \ref{ite:idDevLoc} is the primary subject of this work.
 
-The issuers of  certificates are known as Certificate Authorities (CAs). CAs are further identified by the creator of the keys that they certify (i.e., the CA that issues certificates for EKs is known as the TPM Manufacturer's CA, the CA that issues certificates for IAKs and IDevIDs is known as the OEM's CA, and the CA that issues certificates for LAKs and LDevIDs is known as the Owner's CA). All CAs should support a standard certificate transport protocol that provides confidentiality, integrity, and protection from replay attacks \cite{DevIDSpec-TCG}. These transport protocols are outside the scope of this paper. 
+The issuers of  certificates are known as Certificate Authorities (CAs). CAs are further identified by the creator of the keys that they certify (i.e., the CA that issues certificates for EKs is known as the TPM Manufacturer's CA, the CA that issues certificates for IAKs and IDevIDs is known as the OEM's CA, and the CA that issues certificates for LAKs and LDevIDs is known as the Owner's CA). All CAs should support a standard certificate transport protocol that provides confidentiality, integrity, and protection from replay attacks \citep{DevIDSpec-TCG}. These transport protocols are outside the scope of this paper. 
 
 The term certificate specifically refers to an X.509 v3 digital certificate. 
 A certificate contains a public key and identifying information and is
@@ -160,19 +160,19 @@ Inductive signedCert : Type :=
 \caption{Model of Certificates}
 \end{figure}
 
-An EK certificate's Subject field in combination with other fields imparts various assertions regarding the security qualities and provenance of the TPM \cite{EKSpec}. 
+An EK certificate's Subject field in combination with other fields imparts various assertions regarding the security qualities and provenance of the TPM \citep{EKSpec}. 
 Although the EK is not a DevID, these assertions allow the EK to serve a significant role in the provisioning of DevIDs.
 Specifically, the EK certificate is used in the creation of an IAK certificate, the first and arguably most important certificate that identifies a device.
 Proving that an IAK belongs to a specific device requires first binding the IAK to a specific TPM using the EK and then binding the TPM to a specific device. Due to this reliance, an IAK certificate even includes a field which references the associated EK certificate's serial number.
 
-Trust for creation of a new DevID certificate is based on an existing certificate. Therefore, a chain of certificates can be used to verify a chain of trust to some trust anchor \cite{DevIDSpec-TCG}. Since IAK certificates provide definitive evidence that a key belongs to a specific device, an IAK certificate typically acts as this trust anchor and thus typically is the root node in a chain of certificates. In issuing an IAK certificate, the OEM's CA makes an assertion that is a primary security dependency for the provisioning of all future DevIDs. 
-The Subject field of DevID certificates contains non-TPM device information such as device model and serial numbers. This information should be globally unique per device \cite{DevIDSpec-IEEE}. All certificates in a chain should have the same Subject field as the IAK certificate.
+Trust for creation of a new DevID certificate is based on an existing certificate. Therefore, a chain of certificates can be used to verify a chain of trust to some trust anchor \citep{DevIDSpec-TCG}. Since IAK certificates provide definitive evidence that a key belongs to a specific device, an IAK certificate typically acts as this trust anchor and thus typically is the root node in a chain of certificates. In issuing an IAK certificate, the OEM's CA makes an assertion that is a primary security dependency for the provisioning of all future DevIDs. 
+The Subject field of DevID certificates contains non-TPM device information such as device model and serial numbers. This information should be globally unique per device \citep{DevIDSpec-IEEE}. All certificates in a chain should have the same Subject field as the IAK certificate.
 
 \begin{figure}[h]
   \begin{centering}
   \includegraphics[width=\linewidth]{figures/certRelationships.png}
   \par\end{centering}
-  \caption{Key and Certificate Relationships \cite{DevIDSpec-TCG}}
+  \caption{Key and Certificate Relationships \citep{DevIDSpec-TCG}}
   \label{fig:cert_rel}
 \end{figure}
 \vspace{2em}
@@ -300,7 +300,7 @@ For two commands to match, not only must the commands itself match but all of th
 %
 %
 \section{Identity Provisioning}
-To mantain a cryptographic evidentiary chain linking a DevID to a specific TPM and device, the CA should follow certain provisioning procedures. The TCG describes several such procedures in their specification ``TPM 2.0 Keys for Device Identity and Attestation'' \cite{DevIDSpec-TCG}. 
+To mantain a cryptographic evidentiary chain linking a DevID to a specific TPM and device, the CA should follow certain provisioning procedures. The TCG describes several such procedures in their specification ``TPM 2.0 Keys for Device Identity and Attestation'' \citep{DevIDSpec-TCG}. 
 This chapter considers two of these procedures in detail: OEM creation of an IAK certificate based on an EK certificate and Owner creation of an LAK certificate based on an IAK certificate. I select these two protocols since they bear the most significance in enrollment of additional DevIDs (recall that, in a chain of certificates, IAK certificates may be root nodes and LAK certificates may be parent nodes). For each protocol, the specification outlines steps for the CA and the certificate-requesting entity to perform.
 Furthermore, the specification claims that each protocol provides certain assurances. Each assurance manifests as an assertion regarding either TPM-residency, key attributes, or previously-issued certificates and provides the basis for the resulting cryptographic evidentiary chain formed by a chain of certificates. Therefore, it is of utmost importance to verify that each protocol guarantees its associated assurances.
 Since the TCG themselves do not provide proofs or clear justifications to support these claims, \textit{the goal of this work is to abstractly model these two protocols and formally verify their expected assurances}.
@@ -628,7 +628,7 @@ is guaranteed by the attribute check performed by the CA, Assurance B is guarant
 
 This analysis has inadvertently revealed a potential shortcoming of the IAK provisioning procedure: it provides no assurance regarding device-residency.
 The IAK certificate is intended to provide definitive evidence that a key belongs to a specific device, yet the procedure makes no guarantees that the IAK is actually on the device represented by that identity.
-Proving an IAK belongs to a specific device requires first binding the IAK to a specific TPM using the EK and then binding the TPM to a specific device \cite{DevIDSpec-TCG}. 
+Proving an IAK belongs to a specific device requires first binding the IAK to a specific TPM using the EK and then binding the TPM to a specific device \citep{DevIDSpec-TCG}. 
 But the CA makes no attempt at performing the second part of this process. Instead the CA fully trusts the OEM to have provided the correct device identifying information. 
 Even the attestation variation of the IAK provisioning procedure does not attempt this verification. This variation uses a quote over selected PCRs to verify only that the device is running the appropriate, trusted firmware. All devices with the same model number have an identical golden hash value which represents its expected PCR digest result.
 Although this check guarantees that the TPM containing the IAK is on a specific \textit{type} of device (i.e., a device with that model number), it does not guarantee that the TPM is on a specific device. 
@@ -645,7 +645,7 @@ It is important in secure systems to have strong identification mechanisms in pl
 The contributions of the research presented in this thesis may be summarized as (1) a general investigation into TPM-based DevIDs and chains of certificates, (2) the design and implementation of an abstract formal model of command execution, (3) an in-depth analysis of two TCG-provided key certification protocols, and (4) the discovery of a potential shortcoming of the IAK provisioning procedure and consequently a recommendation for its improvement.
 
 \subsection{Future Work}
-Although the modeled command library and execution environment are useful in verifying properties over some key certification protocols, further improvements are necessary to extend the applicability of this model to a broader range of problems. An initial step towards achieving this is to expand the command library to include the TPM commands necessary for modeling the attestation variation of these provisioning protocols. These attestation variations use PRCs to inform a remote CA of the internal state of a certificate-requesting entity. This variation is strongly encouraged to be performed during certification of an IAK so that the CA may be assured it is issuing a certificate to a device running trusted software. To include PCR-related commands, the structure of abstract state should be modified from a pair to a record similar to that of the work of Halling et al.\ \cite{PrivacyCAAnalysis-Hall}. These advancements to the model also provide the mechanisms necessary to verify the changes to the IAK provisioning procedure recommended in this thesis. In addition to adding those particular commands, it is useful to include more TPM and TSS commands in general. By expanding the range of commands supported by this model, we can describe a broad range of situations, even those unrelated to DevID provisioning protocols.  Besides expanding the modeled TPM command library, we may also improve on the execution environment. Specifically, more complex control sequences such as branching and looping should be included so that we can describe more elaborate scenarios.  In conclusion, this research has revealed several areas for further exploration and improvement. These future areas of work will enhance the capabilities of this model and provide a formal system for verification of TPM-related properties.
+Although the modeled command library and execution environment are useful in verifying properties over some key certification protocols, further improvements are necessary to extend the applicability of this model to a broader range of problems. An initial step towards achieving this is to expand the command library to include the TPM commands necessary for modeling the attestation variation of these provisioning protocols. These attestation variations use PRCs to inform a remote CA of the internal state of a certificate-requesting entity. This variation is strongly encouraged to be performed during certification of an IAK so that the CA may be assured it is issuing a certificate to a device running trusted software. To include PCR-related commands, the structure of abstract state should be modified from a pair to a record similar to that of the work of Halling et al.\ \citep{PrivacyCAAnalysis-Hall}. These advancements to the model also provide the mechanisms necessary to verify the changes to the IAK provisioning procedure recommended in this thesis. In addition to adding those particular commands, it is useful to include more TPM and TSS commands in general. By expanding the range of commands supported by this model, we can describe a broad range of situations, even those unrelated to DevID provisioning protocols.  Besides expanding the modeled TPM command library, we may also improve on the execution environment. Specifically, more complex control sequences such as branching and looping should be included so that we can describe more elaborate scenarios.  In conclusion, this research has revealed several areas for further exploration and improvement. These future areas of work will enhance the capabilities of this model and provide a formal system for verification of TPM-related properties.
 %
 %
 %
@@ -718,7 +718,7 @@ We can use \verb+citep+ for authors names like~\citep{Petz:2019aa} or
 citation~\citet{Ramsdell:2019aa}.
 
 When submitting papers that must conform to LNCS standards just use
-\verb+cite+ for citations like~\cite{Petz:2019aa} and comment out the
+\verb+cite+ for citations like~\citep{Petz:2019aa} and comment out the
 \verb+natbib+ include above and swap \verb+bibliographystyle+ commands
 below.
 \end{comment}
@@ -732,6 +732,6 @@ below.
 %\bibliographystyle{splncs04}
 \bibliographystyle{splncsnat}
 %\bibliography{sldg}
-\bibliography{bib/sldg}
+\bibliography{bib/sldg,bib/thesis_bibliography}
 %
 \end{document}
