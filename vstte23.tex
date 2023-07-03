@@ -69,36 +69,111 @@ DevID certificates provisioned by an OEM at device manufacturing time should pro
 For each provisioning procedure described in the specification, the TCG outlines steps for the CA and the certificate-requesting entity to perform. Furthermore, the TCG claims that each procedure provides certain assurances. These assurances are the basis for the resulting cryptographic evidentiary chain.
 Each assurance manifests as an assertion regarding either TPM-residency, key attributes, or previously-issued certificates.
 
-This work places special emphasis on two key certification protocols, namely OEM Creation of an IAK Certificate based on an EK Certificate and Owner Creation of an LAK Certificate based on an IAK Certificate. I select these protocols due to their especially significant security and identity implications. \textit{The primary goal of this work is to determine the correctness of these two protocols by abstractly modeling them and formally verifying their expected assurances}. I choose this goal since the TCG themselves do not provide proofs or clear justifications for how the protocols provide these assurances. 
-The contributions of the research presented in this thesis may be summarized as (1) a general investigation into TPM-based DevIDs and chains of certificates, (2) the design and implementation of an abstract formal model of command execution, (3) an in-depth analysis of two TCG-provided key certification protocols, and (4) the discovery of a potential shortcoming of the IAK provisioning procedure and consequently a recommendation for its improvement.
+This work examines two key certification protocols: (i) OEM Creation
+of an IAK Certificate based on an EK Certificate; and (ii) Owner
+Creation of an LAK Certificate based on an IAK Certificate. We select
+these protocols due to our need for device identities for remote
+attestation~\cite{Coker::Principles-of-R,petz2022innovations}. \textit{The
+  primary goal to establish the correctness of these two protocols by
+  abstractly modeling and formally verifying their expected
+  properties}. The TCG themselves do not
+provide proofs or clear justifications for how the protocols provide
+these assurances.  Our contributions are: (i) the design and implementation
+of an abstract formal model of command execution; (ii) a formal
+analysis of two TCG-provided key certification protocols; and (iii) the
+discovery of a potential shortcoming of the IAK provisioning procedure
+and a recommendation for its improvement.
 
 \section{Related Work}
-The Privacy CA protocol of the TPM 1.2 has been extensively studied using various formal methods. The Privacy CA protocol was replaced by the Direct Anonymous Attestation (DAA) scheme in the TPM 2.0. Both of these protocols aim to accomplish the same fundamental purpose: allow remote authentication of a device while maintaining its anonymity. These protocols differ from the key certification protocols analyzed in my work which aim to provide individual identification of a device.
-The work of Chen et al.\ \citep{PrivacyCAAnalysis-Chen} analyzes the Privacy CA protocol in the presence of an adversary. They suggest a small modification to the protocol that enhances its security without changing the existing functionality of the TPM 1.2. I similarly suggest a small modification to the IAK provisioning procedure which requires no change to the existing functionality of the TPM 2.0.
-On the other hand, the work of Halling et al.\ \citep{PrivacyCAAnalysis-Hall,TPM12Model} analyzes the Privacy CA protocol but does not consider any specific adversary. Instead, they consider the functional correctness of the protocol and specifically examine the protocol implementation to ensure that it produces the results that it should.  
-My work has many parallels to the works of Halling et al. 
-I attempt to determine whether the implementations of certain key certification protocols result in the assurances that they should.
-Furthermore, Halling et al.\ abstractly model a large subset of the TPM 1.2 commands in the PVS specification language. They model TPM command execution as a transition system over an abstract system state. I implement this same technique in my own work but over a small subset of TPM 2.0 commands as well as several non-TPM commands. 
+The Privacy CA protocol for the TPM 1.2 has been extensively studied
+using various formal methods. The Privacy CA protocol was replaced by
+the Direct Anonymous Attestation (DAA) scheme in the TPM 2.0. Both of
+these protocols aim to accomplish the same fundamental purpose: allow
+remote authentication of a device while maintaining its
+anonymity. These protocols differ from the key certification protocols
+analyzed in my work which aim to provide individual identification of
+a device.  The work of~\citet{PrivacyCAAnalysis-Chen} analyzes the
+Privacy CA protocol in the presence of an adversary. They suggest a
+small modification to the protocol that enhances its security without
+changing the existing functionality of the TPM 1.2. I similarly
+suggest a small modification to the IAK provisioning procedure which
+requires no change to the existing functionality of the TPM 2.0.  On
+the other hand, the work of~\citet{PrivacyCAAnalysis-Hall,TPM12Model}
+analyzes the Privacy CA protocol but does not consider any specific
+adversary. Instead, they consider the functional correctness of the
+protocol and specifically examine the protocol implementation to
+ensure that it produces the results that it should.  My work has many
+parallels to the works of~\citeauthor{PrivacyCAAnalysis-Hall}.  We
+attempt to determine whether the implementations of certain key
+certification protocols result in the assurances that they should.
+Furthermore,~\citeauthor{PrivacyCAAnalysis-Hall} abstractly model a
+large subset of the TPM 1.2 commands in the PVS specification
+language. They model TPM command execution as a transition system over
+an abstract system state. We implement this same technique in my own
+work but over a small subset of TPM 2.0 commands as well as several
+non-TPM commands.
 
-The works of Whitefield et al.\ \citep{DAAAnalysis-Whit} and Wesemeyer et al.\ \citep{DAAAnalysis-Wes} thoroughly study the DAA scheme of the TPM 2.0. Collectively, they develop a symbolic model, a C++ implementation, and a formally-verified fix of the scheme. 
-Many other works use formal methods to examine other aspects of both the TPM 1.2 \citep{AuthAnalysis,PCRAnalysis} and 2.0 \citep{EAAnalysis,HMACAnalysis}.
-These aspects include authentication, platform configuration registers (PCRs), enhanced authorization (EA), and hash-based message authentication code (HMAC) mechanisms. They utilize tools and techniques such as SAPIC, Tamarin, stateful applied pi calculus, amongst others. 
+The works of~\citet{DAAAnalysis-Whit} and~\citet{DAAAnalysis-Wes}
+thoroughly study the DAA scheme of the TPM 2.0. Collectively, they
+develop a symbolic model, a C++ implementation, and a
+formally-verified fix of the scheme.  Many other works use formal
+methods to examine other aspects of both the TPM 1.2
+\citep{AuthAnalysis,PCRAnalysis} and 2.0
+\citep{EAAnalysis,HMACAnalysis}.  These aspects include
+authentication, platform configuration registers (PCRs), enhanced
+authorization (EA), and hash-based message authentication code (HMAC)
+mechanisms. They utilize tools and techniques such as SAPIC, Tamarin,
+stateful applied pi calculus, amongst others.
 %
 %
 %
 \section{TPM 2.0}
 A Trusted Platform Module (TPM) is a microcontroller that complies with the ISO/IEC 11889:2015 international standard.
-The TPM and its specification were designed by the Trusted Computing Group (TCG) to act as a hardware anchor for PC system security. To this end, TPMs have the abilities necessary for secure generation of keys, algorithm agility, secure storage of keys, enhanced authorization, device health attestation, device identification, NVRAM storage and more \citep{{PracticalGuide}}. 
+The TPM and its specification were designed by the Trusted Computing Group (TCG) to act as a hardware anchor for PC system security. To this end, TPMs have the abilities necessary for secure generation of keys, algorithm agility, secure storage of keys, enhanced authorization, device health attestation, device identification, NVRAM storage and more~\citep{{PracticalGuide}}. 
 
-Device health attestation data provided by a TPM offers cryptographic proof of software state. Attestation data comes in the form of a quote which is a signed hash over a selection of platform configuration registers. Platform configuration registers (PCRs) store the results from a chain of boot time measurements in a way that guarantees integrity. In particular, a PCR cannot be rolled back to a previous value resulting in a measurement being undone. To tie attestation data to a specific device, the key that performed the signing operation must be cryptographically bound to that device, that is, the key must be a secure device identifier. 
+Device health attestation data provided by a TPM offers cryptographic
+proof of software state. Attestation data comes in the form of a quote
+which is a signed hash over a selection of platform configuration
+registers. Platform configuration registers (PCRs) store the results
+from a chain of boot time measurements in a way that guarantees
+integrity. In particular, a PCR cannot be rolled back to a previous
+value resulting in a measurement being undone. To tie attestation data
+to a specific device, the key that performed the signing operation
+must be cryptographically bound to that device making the key a
+secure device identifier.
 
-A key may then be created using one of two commands.
-\begin{itemize}
-  \item \verb|TPM2_CreatePrimary|: A Primary key is produced based on the current Primary Seed. A Primary key may be persisted within the TPM. Otherwise it must be recreated after a TPM reset.
-  \item \verb|TPM2_Create|: An Ordinary key is produced based on a seed taken from the RNG. An Ordinary key is the child of another key; it is wrapped by that parent key. It may be persisted within the TPM or persisted external to the TPM in the form of an encrypted key blob. The blob is only loadable using the parent key's authorization in the TPM that created it.
-\end{itemize}
-Keys have attributes that are set at creation-time. These attributes are permanent and include the following: \verb|FixedTPM|, \verb|Sign|, \verb|Decrypt|, and \verb|Restricted|. The \verb|FixedTPM| attribute indicates that the private key cannot be duplicated. A key pair with the \verb|Sign| attribute set consists of a private signing key and a public signature-verification key. When properly handled, private signing keys can provide integrity, authenticity, and nonrepudiation. A key pair with the \verb|Decrypt| attribute set consists of a public encryption key and a private decryption key. When properly handled, public encryption keys can provide confidentiality.
-Our Coq model inductively defines a \verb|pubKey| and \verb|privKey| type for public keys and private keys respectively. A key of either type requires a unique identifier and a sequence of boolean values describing whether a particular attribute is set or not set. A key pair consists of a \verb|pubKey| and a \verb|privKey| with the same identifier and attributes.
+Creating keys bound to a TPM may is performed using
+\verb|TPM2_CreatePrimary| primary keys or \verb|TPM2_Create| for
+ordinary keys.  Primary keys are maintained by the TPM as roots for
+chaining key ownership.  An ordinary key is wrapped by a parent key
+that may be a primary key or another ordinary key.  The wrap operation
+creates an ownership chain from an ordinary key to a primary key tied
+to the TPM.  Keys are defined with attributes that define their
+purpose in TPM, restricting how they are used. Attributes include
+\verb|FixedTPM| to control duplication, \verb|Sign| and \verb|Decrypt|
+to indicate use as a signing or encryption key.  An additional
+\verb|Restricted| attribute further restricts signing and decryption
+keys.  A restricted signing key may only sign a digest that has been
+produced by the TPM and is used during key certification to prove that
+a new key is loaded on the same TPM as itself. A restricted signing
+key is used to prove that a quote is the result of the PCR values
+within the same TPM as itself. 
+
+A restricted decryption key is called a storage key. Only storage keys
+can be used as parents to create or load child objects or to activate
+credentials \citep{PracticalGuide}. All TPMs are shipped with an
+essential storage key: the endorsement key (EK). The EK is installed
+by the TPM manufacturer and stored in a shielded location on the
+TPM. The corresponding EK certificate serves a significant role in the
+creation of DevID certificates.
+
+Our Coq model inductively defines a \verb|pubKey| and \verb|privKey|
+type for public keys and private keys respectively. A key of either
+type requires a unique identifier and a sequence of boolean values
+describing whether a particular attribute is set or not set. A key
+pair consists of a \verb|pubKey| and a \verb|privKey| with the same
+identifier and attributes.
+
 \begin{figure}[h]
 \begin{lstlisting}[language=Coq]
 Inductive pubKey : Type :=
@@ -110,25 +185,6 @@ Inductive privKey : Type :=
 
 \caption{Model of Keys}
 \end{figure}
-
-The \verb|Restricted| attribute provides important security
-implications. A restricted signing key may only sign a digest that has
-been produced by the TPM. A restricted signing key is used during key
-certification to prove that a new key is loaded on the same TPM as
-itself. During attestation, a restricted signing key is used to prove
-that a quote is the result of the PCR values within the same TPM as
-itself. Additionally, a restricted signing key has the ability to sign
-data supplied to the TPM externally by using the \verb|TPM2_Hash|
-command. When used for this purpose, the hash operation is called a
-signature hash.
-
-A restricted decryption key is called a storage key. Only storage keys
-can be used as parents to create or load child objects or to activate
-credentials \citep{PracticalGuide}. All TPMs are shipped with an
-essential storage key: the endorsement key (EK). The EK is installed
-by the TPM manufacturer and stored in a shielded location on the
-TPM. The corresponding EK certificate serves a significant role in the
-creation of DevID certificates.
 
 \section{Secure Device Identity}
 A secure device identifier (DevID) is defined as an identifier that is cryptographically bound to a device \citep{DevIDSpec-IEEE}. A DevID must not be transferable from one device to another and must be stored in a way that protects it from modification. Since the TPM is a secure Root of Trust for Storage and protects keys against compromise, TPM keys are an ideal choice for DevIDs. 
