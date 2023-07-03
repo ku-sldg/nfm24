@@ -72,7 +72,7 @@ Each assurance manifests as an assertion regarding either TPM-residency, key att
 This work places special emphasis on two key certification protocols, namely OEM Creation of an IAK Certificate based on an EK Certificate and Owner Creation of an LAK Certificate based on an IAK Certificate. I select these protocols due to their especially significant security and identity implications. \textit{The primary goal of this work is to determine the correctness of these two protocols by abstractly modeling them and formally verifying their expected assurances}. I choose this goal since the TCG themselves do not provide proofs or clear justifications for how the protocols provide these assurances. 
 The contributions of the research presented in this thesis may be summarized as (1) a general investigation into TPM-based DevIDs and chains of certificates, (2) the design and implementation of an abstract formal model of command execution, (3) an in-depth analysis of two TCG-provided key certification protocols, and (4) the discovery of a potential shortcoming of the IAK provisioning procedure and consequently a recommendation for its improvement.
 
-\subsection{Related Works}
+\section{Related Work}
 The Privacy CA protocol of the TPM 1.2 has been extensively studied using various formal methods. The Privacy CA protocol was replaced by the Direct Anonymous Attestation (DAA) scheme in the TPM 2.0. Both of these protocols aim to accomplish the same fundamental purpose: allow remote authentication of a device while maintaining its anonymity. These protocols differ from the key certification protocols analyzed in my work which aim to provide individual identification of a device.
 The work of Chen et al.\ \cite{PrivacyCAAnalysis-Chen} analyzes the Privacy CA protocol in the presence of an adversary. They suggest a small modification to the protocol that enhances its security without changing the existing functionality of the TPM 1.2. I similarly suggest a small modification to the IAK provisioning procedure which requires no change to the existing functionality of the TPM 2.0.
 On the other hand, the work of Halling et al.\ \cite{PrivacyCAAnalysis-Hall,TPM12Model} analyzes the Privacy CA protocol but does not consider any specific adversary. Instead, they consider the functional correctness of the protocol and specifically examine the protocol implementation to ensure that it produces the results that it should.  
@@ -86,22 +86,19 @@ These aspects include authentication, platform configuration registers (PCRs), e
 %
 %
 %
-\section{Background}
-\subsection{TPM 2.0}
+\section{TPM 2.0}
 A Trusted Platform Module (TPM) is a microcontroller that complies with the ISO/IEC 11889:2015 international standard.
 The TPM and its specification were designed by the Trusted Computing Group (TCG) to act as a hardware anchor for PC system security. To this end, TPMs have the abilities necessary for secure generation of keys, algorithm agility, secure storage of keys, enhanced authorization, device health attestation, device identification, NVRAM storage and more \cite{{PracticalGuide}}. 
 
-The TPM's key generator is based on its own random number generator (RNG) so that it does not rely on external sources of randomness. These keys can be used for a multitude of purposes and may be created or destroyed as often as needed. Due to algorithm agility, the TPM can use nearly any cryptographic algorithm. As a result, keys may utilize asymmetric algorithms such as RSA or ECC, or they may utilize symmetric algorithms such as AES or DES. Additionally, a variety of key strengths (i.e., key sizes) and hash algorithms may be used. By design, keys stored within the TPM are protected against software attacks. Keys may optionally be further protected using enhanced authorization. Enhanced authorization (EA) allows a key or other TPM object to be authorized using a password, HMAC, or policy. This flexibility allows for varying complexities in the requirements for accessing an entity. 
+Device health attestation data provided by a TPM offers cryptographic proof of software state. Attestation data comes in the form of a quote which is a signed hash over a selection of platform configuration registers. Platform configuration registers (PCRs) store the results from a chain of boot time measurements in a way that guarantees integrity. In particular, a PCR cannot be rolled back to a previous value resulting in a measurement being undone. To tie attestation data to a specific device, the key that performed the signing operation must be cryptographically bound to that device, that is, the key must be a secure device identifier. 
 
-Device health attestation data provided by a TPM offers cryptographic proof of software state. Attestation data comes in the form of a quote which is a signed hash over a selection of platform configuration registers. Platform configuration registers (PCRs) store the results from a chain of boot time measurements in a way that guarantees integrity. In particular, a PCR cannot be rolled back to a previous value resulting in a measurement being undone. To tie attestation data to a specific device, the key that performed the signing operation must be cryptographically bound to that device, that is, the key must be a secure device identifier. There exist a variety of additional applications, such as network authentication, which similarly require a device to be definitively identified. DevID certificates may be distributed to remote entities in order to prove that the corresponding private key resides in a specific TPM-containing device. These certificates are stored within the TPM's NVRAM providing protection from accidental erasure. 
-
-Since the focus of this paper is on the usage of TPM keys for secure device identifiers, the discussion on cryptographic keys in the remainder of this section is limited to keys that utilize asymmetric cryptography.  A key may then be created using one of two commands.
+A key may then be created using one of two commands.
 \begin{itemize}
   \item \verb|TPM2_CreatePrimary|: A Primary key is produced based on the current Primary Seed. A Primary key may be persisted within the TPM. Otherwise it must be recreated after a TPM reset.
   \item \verb|TPM2_Create|: An Ordinary key is produced based on a seed taken from the RNG. An Ordinary key is the child of another key; it is wrapped by that parent key. It may be persisted within the TPM or persisted external to the TPM in the form of an encrypted key blob. The blob is only loadable using the parent key's authorization in the TPM that created it.
 \end{itemize}
-Keys have attributes that are set at creation-time. These attributes are permanent and include the following: \verb|FixedTPM|, \verb|Sign|, \verb|Decrypt|, and \verb|Restricted|. The \verb|FixedTPM| attribute indicates that the private key cannot be duplicated. A key pair with the \verb|Sign| attribute set consists of a private signing key and a public signature-verification key. When properly handled, private signing keys can provide integrity, authenticity, and nonrepudiation. A key pair with the \verb|Decrypt| attribute set consists of a public encryption key and a private decryption key. When properly handled, public encryption keys can provide confidentiality. A key with both the \verb|Sign| and \verb|Decrypt| attributes set is called a Combined key. US NIST SP800-57 disallows the use of Combined keys for the reason that it may weaken the security guarantees associated with one or both of the attributes \cite{KeyManagement}. Furthermore, a key pair may have the \verb|Restricted| attribute set, limiting the operations of the private key to TPM-generated data.
-My Coq model inductively defines a \verb|pubKey| and \verb|privKey| type for public keys and private keys respectively. A key of either of these types requires a unique identifier and a sequence of boolean values describing whether a particular attribute is set or not set. A key pair consists of a \verb|pubKey| and a \verb|privKey| with the same identifier and attributes. The model does not differentiate between Primary and Ordinary keys.
+Keys have attributes that are set at creation-time. These attributes are permanent and include the following: \verb|FixedTPM|, \verb|Sign|, \verb|Decrypt|, and \verb|Restricted|. The \verb|FixedTPM| attribute indicates that the private key cannot be duplicated. A key pair with the \verb|Sign| attribute set consists of a private signing key and a public signature-verification key. When properly handled, private signing keys can provide integrity, authenticity, and nonrepudiation. A key pair with the \verb|Decrypt| attribute set consists of a public encryption key and a private decryption key. When properly handled, public encryption keys can provide confidentiality.
+Our Coq model inductively defines a \verb|pubKey| and \verb|privKey| type for public keys and private keys respectively. A key of either type requires a unique identifier and a sequence of boolean values describing whether a particular attribute is set or not set. A key pair consists of a \verb|pubKey| and a \verb|privKey| with the same identifier and attributes.
 \begin{figure}[h]
 \begin{lstlisting}[language=Coq]
 Inductive pubKey : Type :=
@@ -114,81 +111,43 @@ Inductive privKey : Type :=
 \caption{Model of Keys}
 \end{figure}
 
-The \verb|Restricted| attribute provides important security implications. A restricted signing key may only sign a digest that has been produced by the TPM. Enforcement of this constraint is reliant on a 4-byte magic value called \verb|TPM_Generated| \cite{TPMSpec}. All structures that the TPM constructs from internal data begins with this value. Such structures include keys and PCRs. These structures result in several interesting and significant uses for restricted signing keys, namely key certification and attestation. In particular, a restricted signing key is used during key certification to prove that a new key is loaded on the same TPM as itself. And during attestation, a restricted signing key is used to prove that a quote is the result of the PCR values within the same TPM as itself. Additionally, a restricted signing key has the ability to sign data supplied to the TPM externally by using the \verb|TPM2_Hash| command. When used for this purpose, the hash operation is called a signature hash. The \verb|TPM2_Hash| command produces a ticket asserting that the TPM itself calculated this hash and will later sign it. A restricted signing key will not sign external data without this ticket. To prevent spoofing of another TPM's internal data as one's own, the \verb|TPM2_Hash| command only produces a ticket if the external data does not begin with the \verb|TPM_Generated| value.
-A restricted decryption key is called a storage key. Only storage keys can be used as parents to create or load child objects or to activate credentials \cite{PracticalGuide}. All TPMs are shipped with an essential storage key: the endorsement key. The endorsement key (EK) is installed by the TPM manufacturer and stored in a shielded location on the TPM. The corresponding EK certificate serves a significant role in the creation of DevID certificates. 
-This process will be discussed in detail in later sections.
+The \verb|Restricted| attribute provides important security
+implications. A restricted signing key may only sign a digest that has
+been produced by the TPM. A restricted signing key is used during key
+certification to prove that a new key is loaded on the same TPM as
+itself. During attestation, a restricted signing key is used to prove
+that a quote is the result of the PCR values within the same TPM as
+itself. Additionally, a restricted signing key has the ability to sign
+data supplied to the TPM externally by using the \verb|TPM2_Hash|
+command. When used for this purpose, the hash operation is called a
+signature hash.
 
-\subsection{Logical Foundations of Coq}
-The Calculus of Inductive Constructions (CIC) is the underlying formalism of the interactive proof assistant Coq \cite{CIC}. This section shall not discuss this logical system in great detail and instead focuses only on the aspects that are relevant to this work. In particular, this section examines the sort \verb|Prop| and the interesting ways in which it is utilized. The sort \verb|Prop| is the universe of logical propositions. Inductive definitions may be used together with the sort \verb|Prop| to define relations. These relations are called inductive propositions. Some inductive propositions are defined in Coq's standard library while others must be defined by the user. One simple yet important inductive proposition in Coq's standard library is the definition of equality. 
-\begin{figure}[h]
-\begin{lstlisting}[language=Coq]
-Inductive eq {A : Type} (x : A) : A -> Prop :=
-| eq_refl : eq x x.
-\end{lstlisting}
-\caption{Equality in Coq}
-\end{figure}
-Equality has only one constructor, namely \verb|eq_refl| which corresponds with reflexivity. The constructors of an inductive proposition act as introduction rules; for an element to satisfy a particular inductive proposition, it must be built from its constructors. Using \verb|eq|'s single constructor, one can prove nearly all of the fundamental properties of equality (e.g., symmetry and transitivity), though there is one important property of equality which cannot be proven to hold in general, that is, decidability. 
-A type has decidable equality if any two elements of that type are either equal or not equal. Due to the intuitionistic nature of CIC, not all types in Coq have this property. Intuitionistic logic differs from classical logic in that it rejects the law of excluded middle and double negation elimination. Therefore, decidability is not guaranteed over any proposition: equality included. If decidable equality over a specific type is needed, one must declare that type an instance of the \verb|DecEq| class and explicitly prove that this property holds.
-\begin{figure}[h]
-\begin{lstlisting}[language=Coq]
-Class DecEq (A : Type) := 
-{ 
-  decEq : forall x1 x2 :A, {x1 = x2} + {x1 <> x2} 
-}.
-\end{lstlisting}
-\caption{Decidable Equality}
-\end{figure}
-%
-%
-%
+A restricted decryption key is called a storage key. Only storage keys
+can be used as parents to create or load child objects or to activate
+credentials \cite{PracticalGuide}. All TPMs are shipped with an
+essential storage key: the endorsement key (EK). The EK is installed
+by the TPM manufacturer and stored in a shielded location on the
+TPM. The corresponding EK certificate serves a significant role in the
+creation of DevID certificates.
+
 \section{Secure Device Identity}
 A secure device identifier (DevID) is defined as an identifier that is cryptographically bound to a device \cite{DevIDSpec-IEEE}. A DevID must not be transferable from one device to another and must be stored in a way that protects it from modification. Since the TPM is a secure Root of Trust for Storage and protects keys against compromise, TPM keys are an ideal choice for DevIDs. 
 The binding of a TPM key to a specific device instance is represented by a DevID certificate.
-To know when and by whom DevIDs are typically created, it is useful to briefly consider a simplified version of the process for creating and distributing TPM-containing devices to end users.
+To know when and by whom DevIDs are created, it is useful to briefly consider a simplified version of the process for creating and distributing TPM-containing devices to end users.
 \begin{enumerate}
   \item\label{ite:idTPM} TPM Manufacturers produce TPM chips according to the international standard. They provision each TPM chip with an EK certificate that binds the EK to a specific TPM. These chips are then distributed to the original equipment manufacturers (OEMs).
   \item\label{ite:idDevIni} OEMs produce devices (e.g., PCs) with these TPM chips integrated. They provision each TPM chip with one or more DevID certificates that bind a key to a specific device. These devices are then distributed to the end users (Owners).
   \item\label{ite:idDevLoc} Owners may optionally provision their TPM chip with one or more DevID certificates that bind a key to their specific device.
 \end{enumerate} 
 
-The provisioning of device identification in Steps \ref{ite:idDevIni} and \ref{ite:idDevLoc} is the primary subject of this work. It is important to note that an EK is not a DevID because its associated certificate identifies a TPM not device. When using a TPM key for secure device identity, there are restrictions on the attributes that it can have in order to enforce the best security practices. The \verb|Sign| attribute must be set and the \verb|Decrypt| attribute not set. This is in fact another reason that an EK cannot be a DevID --- recall from Section 2.1 that EKs are storage keys and therefore have the \verb|Decrypt| attribute set. Furthermore, a DevID must have the \verb|FixedTPM| attribute set because it is of paramount importance that it never be duplicated, transferred, or copied. On the other hand, the \verb|Restricted| attribute is optional. When the \verb|Restricted| attribute is set, such a key is called an attestation key (AK). This DevID gets its special name due to its unique ability to prove that some object or data is contained within the same TPM as itself. The acronyms DevID and AK are prefixed by the letter I or L denoting Initial or Locally Significant respectively. Initial device identifiers are installed by OEMs in TPM-containing devices at manufacturing time; IAKs and IDevIDs correspond with the keys referenced in Step \ref{ite:idDevIni}. Initial device identifiers are intended to be long-lived and usable for the lifetime of the device. Since an Owner cannot provision new Initial device identifiers, these keys should be recoverable to avoid the loss of these essential identifiers. Primary keys can be recreated during the lifetime of the TPM. Therefore IAKs and IDevIDs should be Primary keys. Locally Significant device identifiers are installed by Owners; LAKs and LDevIDs correspond with the keys referenced in Step \ref{ite:idDevLoc}. Locally Significant device identifiers are not expected to be long-lived because an Owner may install new ones at any time. 
+The provisioning of device identification in Steps \ref{ite:idDevIni}
+and \ref{ite:idDevLoc} is the primary subject of this work.
 
-\begin{table}[h]
-  \begin{center}
-    \scriptsize 
-    \sffamily
-    \renewcommand{\arraystretch}{1.5}
-    \begin{tabular}{ |c|c|c|c|c|c|c| }
-      \hline
-      Key & Type & \verb|FixedTPM| & \verb|Sign| & \verb|Decrypt| & \verb|Restricted| & Creator \\
-      \hline
-      \hline
-      EK & Primary       & X &   & X & X & TPM Manufacturer \\
-      \hline
-      IAK & Primary      & X & X &   & X & OEM \\
-      \hline
-      IDevID & Primary   & X & X &   &   & OEM \\
-      \hline
-      LAK & Ordinary     & X & X &   & X & Owner \\
-      \hline
-      LDevID & Ordinary  & X & X &   &   & Owner \\
-      \hline
-    \end{tabular}
-    \caption{Key Requirements and Recommendations}
-    \label{fig:req_and_recs}
-  \end{center}
-\end{table}
-
-An IAK should be used only for the certification of new DevIDs and even then should only be used sparingly to limit the chances of compromise. Similarly, an IDevID should be used sparingly but instead for device authentication in an enterprise network. Since an Owner may create LAKs and LDevIDs as often as needed, these DevIDs may be used freely. Although, it is still recommended that any given DevID---LAK and LDevID included---be used in only a single application. The reason for this recommendation is that it might be possible to gather a lot of data about a device and/or user when the same identity is used for multiple applications \cite{KeyManagement}. An LAK is intended to be used for the purposes of attestation as well as for the certification of new DevIDs. While an LDevID is intended to be used for any general device authentication purposes.
-
-The issuers of  certificates are known as Certificate Authorities (CAs). CAs are further identified by the creator of the keys that they certify (i.e., the CA that issues certificates for EKs is known as the TPM Manufacturer's CA, the CA that issues certificates for IAKs and IDevIDs is known as the OEM's CA, and the CA that issues certificates for LAKs and LDevIDs is known as the Owner's CA). All CAs should support a standard certificate transport protocol that provides confidentiality, integrity, and protection from replay attacks \cite{DevIDSpec-TCG}. These transport protocols are outside the scope of this paper, and so this work assumes CAs to be following this recommendation precisely. All CAs should have a Certificate Practice Statement (CPS) which states the CA's provisioning procedures.  The TPM Manufacturer's CA and OEM's CA must both be particularly scrupulous due to the important security and identity implications provided by the certificates they issue. The trustworthiness of a certificate is directly reliant on the diligency and rigor of the CA that issued the certificate. A CA's CPS is vital for making an informed trust decision regarding a given certificate. This work chooses to trust that the TPM Manufacturer's CA implements appropriate practices that provide this necessary diligence and rigor. I choose not to investigate this matter primarily because the EK is not a DevID.
+The issuers of  certificates are known as Certificate Authorities (CAs). CAs are further identified by the creator of the keys that they certify (i.e., the CA that issues certificates for EKs is known as the TPM Manufacturer's CA, the CA that issues certificates for IAKs and IDevIDs is known as the OEM's CA, and the CA that issues certificates for LAKs and LDevIDs is known as the Owner's CA). All CAs should support a standard certificate transport protocol that provides confidentiality, integrity, and protection from replay attacks \cite{DevIDSpec-TCG}. These transport protocols are outside the scope of this paper. 
 
 The term certificate specifically refers to an X.509 v3 digital certificate. 
-A certificate contains a public key and identifying information and is signed by a Certificate Authority. This identifying information is contained in the Subject field of the certificate structure. 
-In particular, a certificate binds a key to the identity represented by the Subject field using a signature.
-Each certificate also has a field that contains its associated certificate serial number. This number is unique (per CA) and may be used to definitively identify a certificate. 
-Certificates contain a variety of other fields as well.
-In this model, certificates are abstractly defined by the inductive \verb|signedCert| type. This type greatly simplifies the true implementation of a certificate and includes only a select few of the associated fields. A \verb|signedCert| requires a public key, an identifier, and a private key. An identifier is an abstract representation of a certificate's Subject field and may include information describing either the TPM or the device. The private key parameter denotes the key that performed the signature over the certificate.
+A certificate contains a public key and identifying information and is
+signed by a Certificate Authority. In our model, certificates are abstractly defined by the inductive \verb|signedCert| type. This type greatly simplifies the true implementation of a certificate and includes only a select few of the associated fields. A \verb|signedCert| requires a public key, an identifier, and a private key. An identifier is an abstract representation of a certificate's Subject field and may include information describing either the TPM or the device. The private key parameter denotes the key that performed the signature over the certificate.
 \begin{figure}[h]
 \begin{lstlisting}[language=Coq]
 Inductive identifier : Type :=
@@ -227,9 +186,6 @@ The Subject field of DevID certificates contains non-TPM device information such
   \item \textsf{Owner Installed Box}: The LAK certificate and LDevID certificate is signed by the Owner's CA.
 \end{itemize}
 
-Since a key with the \verb|Restricted| attribute set has the ability to prove that some unknown key is loaded on the same TPM as itself, AK certificates are used as the requisite existing certificate in the provisioning of new DevIDs. Specifically this means that AK certificates may be parent nodes in a chain of certificates. Due to this result, a chain of certificates exhibits a tree structure. The underlying security implications provided by a chain of certificates is formed primarily by the protocols that create these certificates. Specifically, the Proof of Residency and Chain of Trust lines in Figure \ref{fig:cert_rel} are a direct consequence of the assurances provided by the respective certification protocols.
-
-Although, Figure \ref{fig:cert_rel} shows the relationships between keys and certificates for exactly one of each DevID type, in practice, there often exists multiple of each DevID. Due to algorithm agility, an OEM usually installs multiple IAKs and IDevIDs with varying algorithms and sizes. IAKs are always directly linked to an EK, while IDevIDs are always directly linked to an IAK. On the other hand, LAKs and LDevIDs may be directly linked to any attestation key (i.e., an IAK or LAK). This means that an LAK certificate may be used in the provisioning of LDevIDs or additional LAKs producing an arbitrarily long chain of certificates. 
 %
 %
 %
