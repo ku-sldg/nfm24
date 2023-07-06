@@ -85,47 +85,42 @@ have confidence that a remote device is the device it claims to be. An
 ideal method for fulfilling this need uses cryptographic keys in the
 Trusted Platform Module (TPM) as secure device identifiers
 \citep{DevIDSpec-TCG}. A secure device identifier (DevID) is defined
-as an identifier that is cryptographically bound to a device
-\citep{DevIDSpec-IEEE}.  Since the TPM is a secure Root of Trust for
-Storage \citep{TPMSpec}, it provides the necessary protections for
-storing these identifiers and enforcing this constraint.
+as an identifier that is cryptographically bound to a device by a
+trusted party~\citep{DevIDSpec-IEEE}.  As a secure Root of Trust for
+Storage and Reporting~\citep{TPMSpec}, a TPM provides the necessary
+protections for generating and storing DevIDs with suitable integrity
+guarantees.
 
-The specification ``TPM 2.0 Keys for Device Identity and Attestation''
-by the Trusted Computing Group (TCG) describes several procedures for
-remotely proving a key to be resident in a specific device's TPM
-\citep{DevIDSpec-TCG}. These procedures are carefully constructed
-protocols that are intended to be performed by a trusted Certificate
-Authority (CA) in communication with a certificate-requesting
-device. These protocols are designed to maintain a cryptographic
-evidentiary chain linking a DevID to a specific TPM
-\citep{DevIDSpec-TCG}.  DevID certificates provisioned by an OEM at
-device manufacturing time should provide definitive evidence that a
-key belongs to a specific device. Whereas DevID certificates
-provisioned by a device owner require a chain of certificates in order
-to verify a chain of trust to an OEM-provided root certificate. This
-distinction is due to differences in the respective protocols
-prescribed by the TCG's specification.  For each provisioning
-procedure described in the specification, the TCG outlines steps for
-the CA and the certificate-requesting entity to perform. Furthermore,
-the TCG claims that each procedure provides certain assurances. These
-assurances are the basis for the resulting cryptographic evidentiary
-chain.  Each assurance manifests as an assertion regarding either
-TPM-residency, key attributes, or previously-issued certificates.
+The Trusted Computing Group (TCG) describes protocols for assuring a
+key to be resident in a specific device's
+TPM~\citep{DevIDSpec-TCG}. These protocols are performed by a trusted
+Certificate Authority (CA) in communication with a
+certificate-requesting device and maintain a cryptographic evidentiary
+chain linking a DevID to a specific TPM \citep{DevIDSpec-TCG}.  For
+each provisioning procedure, the TCG outlines steps for the CA and the
+certificate-requesting entity. Furthermore, the TCG claims
+that each procedure provides certain assurances. These assurances are
+the basis for the resulting cryptographic evidentiary chain.  Each
+assurance manifests as an assertion regarding either TPM-residency,
+key attributes, or previously-issued certificates.
 
-This work examines two key certification protocols: (i) OEM Creation
-of an IAK Certificate based on an EK Certificate; and (ii) Owner
-Creation of an LAK Certificate based on an IAK Certificate. We select
-these protocols due to our need for device identities for remote
-attestation~\cite{Coker::Principles-of-R,petz2022innovations}. \textit{The
-  primary goal to establish the correctness of these two protocols by
-  abstractly modeling and formally verifying their expected
-  properties}. The TCG themselves do not
-provide proofs or clear justifications for how the protocols provide
-these assurances.  Our contributions are: (i) the design and implementation
-of an abstract formal model of command execution; (ii) a formal
-analysis of two TCG-provided key certification protocols; and (iii) the
-discovery of a potential shortcoming of the IAK provisioning procedure
-and a recommendation for its improvement.
+Our work examines correctness of two key certification protocols: (i)
+OEM Creation of an IAK Certificate based on an EK Certificate; and
+(ii) Owner Creation of an LAK Certificate based on an IAK
+Certificate. These DevID establishment protocols are essential for our
+work in remote
+attestation~\cite{Coker::Principles-of-R,petz2022innovations} where
+device appraisal requires strong identification of an attestation
+source. Specifically, that the signing key for attestation is bound to
+the attestation manager responsible for attestation.  Formal
+verification is required for integration into our formally
+verified/synthesize attestation
+environment\citep{petz2022innovations}.  Our contributions include:
+(i) the design and implementation of an abstract formal model of
+command execution; (ii) a formal analysis of two TCG-provided key
+certification protocols; and (iii) the discovery of a potential
+shortcoming of the IAK provisioning procedure and a recommendation for
+its improvement.
 
 \section{Related Work}
 The Privacy CA protocol for the TPM 1.2 has been extensively studied
