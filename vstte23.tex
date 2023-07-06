@@ -29,7 +29,14 @@
 
 \begin{document}
 %
-\title{Contribution Title\thanks{Supported by organization x.}}
+\title{Verifying TPM DevID Creation\thanks{This work is funded in part
+    by the NSA Science of Security initiative contract
+    \#H98230-18-D-0009 and Defense Advanced Research Project Agency
+    contract \#HR0011-18-9-0001 and Honeywell FMT Purchase Order
+    \#N000422909. The views and conclusions contained in this document
+    are those of the authors and should not be interpreted as
+    representing the official policies, either expressed or implied,
+    of the U.S. Government.}}
 %
 %\titlerunning{Abbreviated paper title}
 % If the paper title is too long for the running head, you can set
@@ -49,25 +56,61 @@ Perry Alexander}
 \maketitle              % typeset the header of the contribution
 %
 \begin{abstract}
-%The abstract should briefly summarize the contents of the paper in 15--250 words.
-A secure device identifier (DevID) is defined as an identifier that is cryptographically bound to a device. Trusted Platform Module (TPM) keys are an ideal choice for implementation of these identifiers.
-The specification ``TPM 2.0 Keys for Device Identity and Attestation'' by the Trusted Computing Group (TCG) describes several procedures for remotely proving a key to be resident in a specific device's TPM and thereby satisfying the requirements for a DevID. These procedures are carefully constructed protocols that are intended to be performed by a trusted Certificate Authority (CA) in communication with a certificate-requesting device and are designed to maintain a cryptographic evidentiary chain linking a DevID to a specific TPM. The TCG claims that each protocol provides certain assurances; these assurances are the basis for the resulting cryptographic evidentiary chain. 
-\textit{I aim to determine the correctness of these key certification protocols by abstractly modeling them and formally verifying their expected assurances}. I choose this goal since the TCG themselves do not provide proofs or clear justifications for how the protocols provide these assurances. 
+  A secure device identifier (DevID) is an identifier that is
+  cryptographically bound to a device. Trusted Platform Module (TPM)
+  keys are an ideal choice for implementation of these identifiers.
+  The specification ``TPM 2.0 Keys for Device Identity and
+  Attestation'' by the Trusted Computing Group (TCG) describes several
+  procedures for remotely proving a key to be resident in a specific
+  device's TPM and thereby satisfying the requirements for a
+  DevID. These procedures are carefully constructed protocols that are
+  intended to be performed by a trusted Certificate Authority (CA) in
+  communication with a certificate-requesting device and are designed
+  to maintain a cryptographic evidentiary chain linking a DevID to a
+  specific TPM. The TCG claims that each protocol provides certain
+  assurances; these assurances are the basis for the resulting
+  cryptographic evidentiary chain.  We aim to determine the
+  correctness of key certification protocols by abstractly modeling
+  and formally verifying their properties.
 
-\keywords{First keyword  \and Second keyword \and Another keyword.}
+\keywords{Secure Device Identifiers \and TPM \and Verification.}
 \end{abstract}
 %
 %
 %
 \section{Introduction}
-Development and deployment of trusted systems often require definitive identification of devices. A remote entity should have confidence that a device is that which it claims to be. An ideal method for fulfulling this need is through the utilization of cryptographic keys in the Trusted Platform Module (TPM) as secure device identitifiers \citep{DevIDSpec-TCG}. A secure device identifier (DevID) is defined as an identifier that is cryptographically bound to a device \citep{DevIDSpec-IEEE}. 
-A DevID must not be transferable from one device to another as that would allow distinct devices to be identified as the same. 
-Since the TPM is a secure Root of Trust for Storage \citep{TPMSpec}, it provides the necessary protections for storing these identifiers and enforcing this constraint. 
+Development and deployment of trusted systems requires strong device
+identification~\citep{Martin:08:The-ten-page-in}. An entity should
+have confidence that a remote device is the device it claims to be. An
+ideal method for fulfilling this need uses cryptographic keys in the
+Trusted Platform Module (TPM) as secure device identifiers
+\citep{DevIDSpec-TCG}. A secure device identifier (DevID) is defined
+as an identifier that is cryptographically bound to a device
+\citep{DevIDSpec-IEEE}.  Since the TPM is a secure Root of Trust for
+Storage \citep{TPMSpec}, it provides the necessary protections for
+storing these identifiers and enforcing this constraint.
 
-The specification ``TPM 2.0 Keys for Device Identity and Attestation'' by the Trusted Computing Group (TCG) describes several procedures for remotely proving a key to be resident in a specific device's TPM \citep{DevIDSpec-TCG}. These procedures are carefully constructed protocols that are intended to be performed by a trusted Certificate Authority (CA) in communication with a certificate-requesting device. These protocols are designed to maintain a cryptographic evidentiary chain linking a DevID to a specific TPM \citep{DevIDSpec-TCG}. 
-DevID certificates provisioned by an OEM at device manufacturing time should provide definitive evidence that a key belongs to a specific device. Whereas DevID certificates provisioned by a device owner require a chain of certificates in order to verify a chain of trust to an OEM-provided root certificate. This distinction is due to differences in the respective protocols prescribed by the TCG's specification. 
-For each provisioning procedure described in the specification, the TCG outlines steps for the CA and the certificate-requesting entity to perform. Furthermore, the TCG claims that each procedure provides certain assurances. These assurances are the basis for the resulting cryptographic evidentiary chain.
-Each assurance manifests as an assertion regarding either TPM-residency, key attributes, or previously-issued certificates.
+The specification ``TPM 2.0 Keys for Device Identity and Attestation''
+by the Trusted Computing Group (TCG) describes several procedures for
+remotely proving a key to be resident in a specific device's TPM
+\citep{DevIDSpec-TCG}. These procedures are carefully constructed
+protocols that are intended to be performed by a trusted Certificate
+Authority (CA) in communication with a certificate-requesting
+device. These protocols are designed to maintain a cryptographic
+evidentiary chain linking a DevID to a specific TPM
+\citep{DevIDSpec-TCG}.  DevID certificates provisioned by an OEM at
+device manufacturing time should provide definitive evidence that a
+key belongs to a specific device. Whereas DevID certificates
+provisioned by a device owner require a chain of certificates in order
+to verify a chain of trust to an OEM-provided root certificate. This
+distinction is due to differences in the respective protocols
+prescribed by the TCG's specification.  For each provisioning
+procedure described in the specification, the TCG outlines steps for
+the CA and the certificate-requesting entity to perform. Furthermore,
+the TCG claims that each procedure provides certain assurances. These
+assurances are the basis for the resulting cryptographic evidentiary
+chain.  Each assurance manifests as an assertion regarding either
+TPM-residency, key attributes, or previously-issued certificates.
 
 This work examines two key certification protocols: (i) OEM Creation
 of an IAK Certificate based on an EK Certificate; and (ii) Owner
@@ -127,7 +170,8 @@ stateful applied pi calculus, amongst others.
 %
 %
 %
-\section{TPM 2.0}
+\section{Background}
+\subsection{TPM 2.0}
 A Trusted Platform Module (TPM) is a microcontroller that complies with the ISO/IEC 11889:2015 international standard.
 The TPM and its specification were designed by the Trusted Computing Group (TCG) to act as a hardware anchor for PC system security. To this end, TPMs have the abilities necessary for secure generation of keys, algorithm agility, secure storage of keys, enhanced authorization, device health attestation, device identification, NVRAM storage and more~\citep{{PracticalGuide}}. 
 
@@ -186,24 +230,46 @@ Inductive privKey : Type :=
 \caption{Model of Keys}
 \end{figure}
 
-\section{Secure Device Identity}
-A secure device identifier (DevID) is defined as an identifier that is cryptographically bound to a device \citep{DevIDSpec-IEEE}. A DevID must not be transferable from one device to another and must be stored in a way that protects it from modification. Since the TPM is a secure Root of Trust for Storage and protects keys against compromise, TPM keys are an ideal choice for DevIDs. 
-The binding of a TPM key to a specific device instance is represented by a DevID certificate.
-To know when and by whom DevIDs are created, it is useful to briefly consider a simplified version of the process for creating and distributing TPM-containing devices to end users.
+\subsection{Secure Device Identifier}
+A secure device identifier (DevID) is an identifier that is
+cryptographically bound to a device \citep{DevIDSpec-IEEE}. A DevID
+must not be transferable from one device to another and must be stored
+in a way that protects it from modification. TPM keys are an ideal
+choice for DevIDs.  The binding of a TPM key to a specific device
+instance is represented by a DevID certificate.  To know when and by
+whom DevIDs are created, it is useful to briefly consider a simplified
+version of the process for creating and distributing TPM-containing
+devices to end users.
+
 \begin{enumerate}
-  \item\label{ite:idTPM} TPM Manufacturers produce TPM chips according to the international standard. They provision each TPM chip with an EK certificate that binds the EK to a specific TPM. These chips are then distributed to the original equipment manufacturers (OEMs).
-  \item\label{ite:idDevIni} OEMs produce devices (e.g., PCs) with these TPM chips integrated. They provision each TPM chip with one or more DevID certificates that bind a key to a specific device. These devices are then distributed to the end users (Owners).
-  \item\label{ite:idDevLoc} Owners may optionally provision their TPM chip with one or more DevID certificates that bind a key to their specific device.
+\item\label{ite:idTPM} TPM Manufacturers produce TPM chips according
+  to the international standard. They provision each TPM chip with an
+  EK certificate that binds the EK to a specific TPM. The chips and
+  certificates are distributed to the original equipment
+  manufacturers (OEMs).
+\item\label{ite:idDevIni} OEMs produce devices (e.g., PCs) with TPM
+  chips. They provision each TPM chip with one or more DevID
+  certificates that bind a key to their associated device. These
+  devices are then distributed to the end users (Owners).
+\item\label{ite:idDevLoc} Owners may optionally provision their TPM
+  chip with one or more DevID certificates that bind keys to their
+  specific device. 
 \end{enumerate} 
 
-The provisioning of device identification in Steps \ref{ite:idDevIni}
-and \ref{ite:idDevLoc} is the primary subject of this work.
+The issuers of certificates are known as Certificate Authorities
+(CAs). Each certificate contains a public key and identifying
+information, signed by a Certificate Authority. In our model,
+certificates are abstractly defined by the inductive \verb|signedCert|
+consisting of a public key, an identifier, and a private key. An
+identifier is an abstract representation of a certificate's Subject
+field and may include information describing either the TPM or the
+device. The private key parameter denotes the key that performed the
+signature over the certificate.
 
-The issuers of  certificates are known as Certificate Authorities (CAs). CAs are further identified by the creator of the keys that they certify (i.e., the CA that issues certificates for EKs is known as the TPM Manufacturer's CA, the CA that issues certificates for IAKs and IDevIDs is known as the OEM's CA, and the CA that issues certificates for LAKs and LDevIDs is known as the Owner's CA). All CAs should support a standard certificate transport protocol that provides confidentiality, integrity, and protection from replay attacks \citep{DevIDSpec-TCG}. These transport protocols are outside the scope of this paper. 
+The provisioning of device identification using CAs in Steps
+\ref{ite:idDevIni} and \ref{ite:idDevLoc} is the primary subject of
+this work.
 
-The term certificate specifically refers to an X.509 v3 digital certificate. 
-A certificate contains a public key and identifying information and is
-signed by a Certificate Authority. In our model, certificates are abstractly defined by the inductive \verb|signedCert| type. This type greatly simplifies the true implementation of a certificate and includes only a select few of the associated fields. A \verb|signedCert| requires a public key, an identifier, and a private key. An identifier is an abstract representation of a certificate's Subject field and may include information describing either the TPM or the device. The private key parameter denotes the key that performed the signature over the certificate.
 \begin{figure}[h]
 \begin{lstlisting}[language=Coq]
 Inductive identifier : Type :=
@@ -216,13 +282,15 @@ Inductive signedCert : Type :=
 \caption{Model of Certificates}
 \end{figure}
 
-An EK certificate's Subject field in combination with other fields imparts various assertions regarding the security qualities and provenance of the TPM \citep{EKSpec}. 
-Although the EK is not a DevID, these assertions allow the EK to serve a significant role in the provisioning of DevIDs.
-Specifically, the EK certificate is used in the creation of an IAK certificate, the first and arguably most important certificate that identifies a device.
-Proving that an IAK belongs to a specific device requires first binding the IAK to a specific TPM using the EK and then binding the TPM to a specific device. Due to this reliance, an IAK certificate even includes a field which references the associated EK certificate's serial number.
-
-Trust for creation of a new DevID certificate is based on an existing certificate. Therefore, a chain of certificates can be used to verify a chain of trust to some trust anchor \citep{DevIDSpec-TCG}. Since IAK certificates provide definitive evidence that a key belongs to a specific device, an IAK certificate typically acts as this trust anchor and thus typically is the root node in a chain of certificates. In issuing an IAK certificate, the OEM's CA makes an assertion that is a primary security dependency for the provisioning of all future DevIDs. 
-The Subject field of DevID certificates contains non-TPM device information such as device model and serial numbers. This information should be globally unique per device \citep{DevIDSpec-IEEE}. All certificates in a chain should have the same Subject field as the IAK certificate.
+Trust for creation of a new DevID certificate is always based on an
+existing certificate. Therefore, a chain of certificates can be used
+to verify a chain of trust to some trust anchor
+\citep{DevIDSpec-TCG}. Since IAK certificates provide definitive
+evidence that a key belongs to a specific device, an IAK certificate
+typically acts as this trust anchor and is typically the root node in
+a chain of certificates. In issuing an IAK certificate, the OEM's CA
+makes an assertion that is a primary security dependency for the
+provisioning of all future DevIDs.
 
 \begin{figure}[h]
   \begin{centering}
@@ -280,25 +348,36 @@ Due to the abstract, symbolic nature of this model, several TPM commands are int
 Each command included in this model corresponds with exactly one constructor in the \verb|execute| relation (excluding \verb|TPM2_Sign| which corresponds with two). Each constructor possesses its own distinctive conditions that must be met for execution to be successful. These conditions are manifested in several ways: constructors pattern match on the command's inputs, some inputs must be in the initial state, and the results must be in the final state.
 
 \begin{figure}[h]
-  \begin{lstlisting}[language=Coq]
-  Inductive command : Type :=
-  | TPM2_Hash : message -> command
-  | CheckHash : message -> message -> command
-  | TPM2_Sign : message -> privKey -> command
-  | TPM2_Certify : pubKey -> privKey -> command
-  | CheckSig : message -> pubKey -> command
-  | TPM2_MakeCredential : message -> randType -> pubKey -> command
-  | TPM2_ActivateCredential : message -> privKey -> privKey -> command
-  | MakeCSR_IDevID : identifier -> signedCert -> pubKey -> command
-  | MakeCSR_LDevID : message -> signedCert -> command
-  | CheckCert : signedCert -> pubKey -> command
-  | CheckAttributes : pubKey -> Restricted -> Sign -> Decrypt -> FixedTPM -> command
-  | MakePair : message -> message -> command.
-  \end{lstlisting}
-  \caption{Model of Commands}
-  \end{figure}
+  \begin{footnotesize}
+\begin{lstlisting}[language=Coq]
+Inductive command : Type :=
+| TPM2_Hash : message -> command
+| CheckHash : message -> message -> command
+| TPM2_Sign : message -> privKey -> command
+| TPM2_Certify : pubKey -> privKey -> command
+| CheckSig : message -> pubKey -> command
+| TPM2_MakeCredential : message -> randType -> pubKey -> command
+| TPM2_ActivateCredential : message -> privKey -> privKey -> command
+| MakeCSR_IDevID : identifier -> signedCert -> pubKey -> command
+| MakeCSR_LDevID : message -> signedCert -> command
+| CheckCert : signedCert -> pubKey -> command
+| CheckAttributes : pubKey -> Restricted -> Sign -> Decrypt -> FixedTPM -> command
+| MakePair : message -> message -> command.
+\end{lstlisting}
+\end{footnotesize}
+\caption{Command data structure.}
+\end{figure}
 
-The \verb|TPM2_Hash| command performs a cryptographic hash operation on a piece of data. This data may be any message that is known to the entity performing the command; this message must be contained in the initial \verb|state|. The result of the operation is abstractly defined using the opaque \verb|hash| constructor and is stored in both the final \verb|tpm_state| and \verb|state|. Only one command may be used to determine the contents of a hash digest, that is, the \verb|CheckHash| command which verifies that the contents of a hash digest match a particular plaintext message. Both the hash digest and the plaintext message must be contained in the initial \verb|state|.
+The \verb|TPM2_Hash| command performs a cryptographic hash operation
+on a piece of data. This data may be any message that is known to the
+entity performing the command; this message must be contained in the
+initial \verb|state|. The result of the operation is abstractly
+defined using the opaque \verb|hash| constructor and is stored in both
+the final \verb|tpm_state| and \verb|state|. Only one command may be
+used to determine the contents of a hash digest, that is, the
+\verb|CheckHash| command which verifies that the contents of a hash
+digest match a particular plaintext message. Both the hash digest and
+the plaintext message must be contained in the initial \verb|state|. 
 
 The \verb|TPM2_Sign| command generates a signature over a message using the specified private key. There are several conditions for successful execution. For one, the key must have the \verb|Sign| attribute set. Additionally, the key must be loaded on the TPM (i.e., be contained in the initial \verb|tpm_state|). The conditions then differ based on the status of the private key's \verb|Restricted| attribute; the \verb|execute| relation includes one constructor for each a restricted and nonrestricted key. If the key does not have the \verb|Restricted| attribute set, then the message must simply be in the initial \verb|state|. On the other hand, if the key does have the \verb|Restricted| attribute set, then the message must be in the initial \verb|tpm_state|. As discussed above, these messages may be TPM-internal objects or hash digests. In practice, the \verb|TPM2_Hash| command produces a ticket containing a validation structure which indicates that the resulting hash was produced by the TPM and is safe to sign; this ticket is then passed to the \verb|TPM2_Sign| command. In the model, these tickets are handled implicitly: the hash digest produced by \verb|TPM2_Hash| is added to its final \verb|tpm_state| so that a subsequent signing operation may have the hash digest in its initial \verb|tpm_state|. 
 
