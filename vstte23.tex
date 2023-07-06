@@ -167,63 +167,70 @@ stateful applied pi calculus, amongst others.
 %
 \section{Background}
 \subsection{TPM 2.0}
-A Trusted Platform Module (TPM) is a microcontroller that complies with the ISO/IEC 11889:2015 international standard.
-The TPM and its specification were designed by the Trusted Computing Group (TCG) to act as a hardware anchor for PC system security. To this end, TPMs have the abilities necessary for secure generation of keys, algorithm agility, secure storage of keys, enhanced authorization, device health attestation, device identification, NVRAM storage and more~\citep{{PracticalGuide}}. 
+A Trusted Platform Module (TPM) is a microcontroller that complies
+with the ISO/IEC 11889:2015 international standard.  The TPM and its
+specification were designed by the Trusted Computing Group (TCG) to
+act as a hardware anchor for PC system security. To this end, TPMs
+have the abilities necessary for secure generation of keys, algorithm
+agility, secure storage of keys, enhanced authorization, measurement
+storage and reporting, device identification, and NVRAM
+storage~\citep{{PracticalGuide}}.
 
-Device health attestation data provided by a TPM offers cryptographic
-proof of software state. Attestation data comes in the form of a quote
-which is a signed hash over a selection of platform configuration
-registers. Platform configuration registers (PCRs) store the results
-from a chain of boot time measurements in a way that guarantees
-integrity. In particular, a PCR cannot be rolled back to a previous
-value resulting in a measurement being undone. To tie attestation data
-to a specific device, the key that performed the signing operation
-must be cryptographically bound to that device making the key a
-secure device identifier.
+Attestation is high-integrity reporting of system measurements stored
+in platform configuration registers (PCRs).  PCRs store a composite of
+a measurement chain in a way that guarantees integrity. Rather than
+being set like a traditional register, a PCR is extended by
+concatenating a new hash to the current PCR value, hashing and storing
+the result.  Thus, a PCR captures both measurement value and order.
+An attestation is a PCR composite signed with a TPM key to guarantee
+integrity and authenticity.  To tie attestation data to a specific
+device, the signing key must be cryptographically bound to that device
+making the key a secure device identifier.
 
-Creating keys bound to a TPM may is performed using
-\verb|TPM2_CreatePrimary| primary keys or \verb|TPM2_Create| for
+Creating keys bound to a TPM is performed using the commands
+\verb|TPM2_CreatePrimary| for primary keys and \verb|TPM2_Create| for
 ordinary keys.  Primary keys are maintained by the TPM as roots for
 chaining key ownership.  An ordinary key is wrapped by a parent key
-that may be a primary key or another ordinary key.  The wrap operation
-creates an ownership chain from an ordinary key to a primary key tied
-to the TPM.  Keys are defined with attributes that define their
-purpose in TPM, restricting how they are used. Attributes include
-\verb|FixedTPM| to control duplication, \verb|Sign| and \verb|Decrypt|
-to indicate use as a signing or encryption key.  An additional
-\verb|Restricted| attribute further restricts signing and decryption
-keys.  A restricted signing key may only sign a digest that has been
-produced by the TPM and is used during key certification to prove that
-a new key is loaded on the same TPM as itself. A restricted signing
-key is used to prove that a quote is the result of the PCR values
-within the same TPM as itself. 
+that may be a primary key or another ordinary key.  The wrapping
+operation creates an ownership chain from an ordinary key to a primary
+key.  Keys are defined with attributes that define their purpose in
+TPM, restricting how they are used. Attributes include \verb|FixedTPM|
+to control duplication, \verb|Sign| and \verb|Decrypt| to indicate use
+as a signing or encryption key.  An additional \verb|Restricted|
+attribute further restricts signing and decryption keys.  A restricted
+signing key may only sign a PCR digest produced by the TPM during
+attestation and to prove that a new key is loaded on the same TPM as
+itself during certification.  A valid signature proves that quoted PCR
+values or new key are from the same TPM as the key.  If the signing
+key is bound to the a TPM, then the PCR values or new key are also
+bound to the same TPM.
 
 A restricted decryption key is called a storage key. Only storage keys
 can be used as parents to create or load child objects or to activate
-credentials \citep{PracticalGuide}. All TPMs are shipped with an
-essential storage key: the endorsement key (EK). The EK is installed
-by the TPM manufacturer and stored in a shielded location on the
-TPM. The corresponding EK certificate serves a significant role in the
-creation of DevID certificates.
+credentials \citep{PracticalGuide}. The EK is initialized by the TPM
+manufacturer and stored in a shielded location on the TPM. The
+corresponding EK certificate is the root for chains of IAKs and LAKs
+and thus plays a significant role in the creation of DevID
+certificates.
 
-Our Coq model inductively defines a \verb|pubKey| and \verb|privKey|
-type for public keys and private keys respectively. A key of either
-type requires a unique identifier and a sequence of boolean values
-describing whether a particular attribute is set or not set. A key
-pair consists of a \verb|pubKey| and a \verb|privKey| with the same
-identifier and attributes.
+% Our Coq model inductively defines a \verb|pubKey| and \verb|privKey|
+% type for public keys and private keys respectively. A key of either
+% type requires a unique identifier and a sequence of boolean values
+% describing whether a particular attribute is set or not set. A key
+% pair consists of a \verb|pubKey| and a \verb|privKey| with the same
+% identifier and attributes.
 
-\begin{figure}[h]
-\begin{lstlisting}[language=Coq]
-Inductive pubKey : Type :=
-| Public : keyIdType -> Restricted -> Sign -> Decrypt -> FixedTPM -> pubKey.
+% \begin{figure}[h]
+% \begin{lstlisting}[language=Coq]
+% Inductive pubKey : Type :=
+% | Public : keyIdType -> Restricted -> Sign -> Decrypt -> FixedTPM -> pubKey.
 
-Inductive privKey : Type :=
-| Private : keyIdType -> Restricted -> Sign -> Decrypt -> FixedTPM -> privKey.
-\end{lstlisting}
+% Inductive privKey : Type :=
+% | Private : keyIdType -> Restricted -> Sign -> Decrypt -> FixedTPM -> privKey.
+% \end{lstlisting}
 
-\caption{Model of Keys}
-\end{figure}
+% \caption{Model of Keys}
+% \end{figure}
 
 \subsection{Secure Device Identifier}
 A secure device identifier (DevID) is an identifier that is
@@ -251,19 +258,19 @@ devices to end users.
   specific device. 
 \end{enumerate} 
 
-The issuers of certificates are known as Certificate Authorities
-(CAs). Each certificate contains a public key and identifying
-information, signed by a Certificate Authority. In our model,
-certificates are abstractly defined by the inductive \verb|signedCert|
-consisting of a public key, an identifier, and a private key. An
-identifier is an abstract representation of a certificate's Subject
-field and may include information describing either the TPM or the
-device. The private key parameter denotes the key that performed the
-signature over the certificate.
+\noindent Modeling and verifying device identification provisioning
+using CAs in \ref{ite:idDevIni} and \ref{ite:idDevLoc} is the subject
+of this work.
 
-The provisioning of device identification using CAs in Steps
-\ref{ite:idDevIni} and \ref{ite:idDevLoc} is the primary subject of
-this work.
+Each certificate contains a public key and identifying information,
+signed by a Certificate Authority (CA). In our model
+(Figure~\ref{fig:certificate-model}), certificates are abstractly
+defined by the inductive type \verb|signedCert| consisting of a public
+key, an identifier, and a private key. An identifier is an abstract
+representation of a certificate's Subject field and may include
+information describing either the TPM or the device. The private key
+parameter denotes the key that performed the signature over the
+certificate.
 
 \begin{figure}[h]
 \begin{lstlisting}[language=Coq]
@@ -274,36 +281,37 @@ Inductive identifier : Type :=
 Inductive signedCert : Type :=
 | Cert : pubKey -> identifier -> privKey -> signedCert.
 \end{lstlisting}
-\caption{Model of Certificates}
+\caption{Certificate Model}
+\label{fig:certificate-model}
 \end{figure}
 
-Trust for creation of a new DevID certificate is always based on an
-existing certificate. Therefore, a chain of certificates can be used
-to verify a chain of trust to some trust anchor
-\citep{DevIDSpec-TCG}. Since IAK certificates provide definitive
-evidence that a key belongs to a specific device, an IAK certificate
-typically acts as this trust anchor and is typically the root node in
-a chain of certificates. In issuing an IAK certificate, the OEM's CA
-makes an assertion that is a primary security dependency for the
-provisioning of all future DevIDs.
+Trust for new DevID certificate creation is always inherited from an
+existing certificate forming a certificate chain. Such chains define a
+chain-of-trust from a DevID to some trust anchor.
+\citep{DevIDSpec-TCG}. Since IAK certificates are tied to the EK
+and provide definitive evidence that a key belongs to a specific
+device, an IAK certificate acts as this trust anchor and is the root
+node in a chain of certificates. In issuing an IAK certificate, the
+OEM's CA makes an assertion that is a primary security dependency for
+the provisioning of all future DevIDs.
 
-\begin{figure}[h]
-  \begin{centering}
-  \includegraphics[width=\linewidth]{figures/certRelationships.png}
-  \par\end{centering}
-  \caption{Key and Certificate Relationships \citep{DevIDSpec-TCG}}
-  \label{fig:cert_rel}
-\end{figure}
-\vspace{2em}
-\begin{itemize}[itemsep=0pt,parsep=0pt,partopsep=0pt]
-  \item \textsf{TPM Manufacturer Installed Box}: The EK certificate is signed by the TPM Manufacturer's CA and binds the EK to a specific TPM.
-  \item \textsf{Line A}: The IAK is verified by the OEM's CA to have the correct key properties and to be loaded on the same TPM as the EK.
-  \item \textsf{Line B}: The IDevID is verified by the OEM's CA to have the correct key properties and to be loaded on the same TPM as the IAK.
-  \item \textsf{OEM Installed Box}: The IAK certificate and IDevID certificate is signed by the OEM's CA and binds the IAK and IDevID to a specific device.
-  \item \textsf{Line C}: The LAK is verified by the Owner's CA to have the correct key properties and to be loaded on the same TPM as the IAK.
-  \item \textsf{Line D}: The LDevID is verified by the Owner's CA to have the correct key properties and to be loaded on the same TPM as the LAK.
-  \item \textsf{Owner Installed Box}: The LAK certificate and LDevID certificate is signed by the Owner's CA.
-\end{itemize}
+% \begin{figure}[h]
+%   \begin{centering}
+%   \includegraphics[width=\linewidth]{figures/certRelationships.png}
+%   \par\end{centering}
+%   \caption{Key and Certificate Relationships \citep{DevIDSpec-TCG}}
+%   \label{fig:cert_rel}
+% \end{figure}
+% \vspace{2em}
+% \begin{itemize}[itemsep=0pt,parsep=0pt,partopsep=0pt]
+%   \item \textsf{TPM Manufacturer Installed Box}: The EK certificate is signed by the TPM Manufacturer's CA and binds the EK to a specific TPM.
+%   \item \textsf{Line A}: The IAK is verified by the OEM's CA to have the correct key properties and to be loaded on the same TPM as the EK.
+%   \item \textsf{Line B}: The IDevID is verified by the OEM's CA to have the correct key properties and to be loaded on the same TPM as the IAK.
+%   \item \textsf{OEM Installed Box}: The IAK certificate and IDevID certificate is signed by the OEM's CA and binds the IAK and IDevID to a specific device.
+%   \item \textsf{Line C}: The LAK is verified by the Owner's CA to have the correct key properties and to be loaded on the same TPM as the IAK.
+%   \item \textsf{Line D}: The LDevID is verified by the Owner's CA to have the correct key properties and to be loaded on the same TPM as the LAK.
+%   \item \textsf{Owner Installed Box}: The LAK certificate and LDevID certificate is signed by the Owner's CA.
+% \end{itemize}
 
 %
 %
