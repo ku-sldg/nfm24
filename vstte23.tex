@@ -272,7 +272,7 @@ information describing either the TPM or the device. The private key
 parameter denotes the key that performed the signature over the
 certificate.
 
-\begin{figure}[h]
+\begin{figure}[hbtp]
 \begin{lstlisting}[language=Coq]
 Inductive identifier : Type :=
 | TPM_info : tpmInfoType -> identifier
@@ -317,8 +317,15 @@ the provisioning of all future DevIDs.
 %
 %
 \section{Command Execution Model}
-The protocols used to create DevID certificates require performing both TPM and non-TPM commands. A command may rely on a variety of parameters such as keys, nonces, certificates, as well as other messages. A message includes the structures that an entity may use or produce. The \verb|message| type is 
-\begin{figure}[h]
+
+The protocols used to create DevID certificates require performing
+TPM, TSS and non-TPM commands. A command may rely on a variety of
+parameters such as keys, nonces, certificates, as well as messages
+that define structures an entity may use or produce. The
+\verb|message| type is an abstract representation of these structures
+in Figure~\ref{fig:message-model}.
+
+\begin{figure}[hbtp]
 \begin{lstlisting}[language=Coq]
 Inductive message : Type :=
 | publicKey : pubKey -> message
@@ -333,24 +340,57 @@ Inductive message : Type :=
 | signedCertificate : signedCert -> message
 | pair : message -> message -> message.
 \end{lstlisting}
-\caption{Model of Messages}
+\caption{Message Model}
+\label{fig:message-model}
 \end{figure}
-an abstract representation of these structures. From a message, additional messages may be inferred. For example, given a message in the form \verb|signature m k|, the message \verb|m| may be deduced. Whereas given a message in the form \verb|encryptedCredential n g k|, no messages may be deduced. This concept is modeled in two ways: as a recursive function \verb|inferFrom| and as an inductive proposition \verb|inferrable|. These two definitions are proven equivalent and so may be used interchangeably. In particular, additional information may be gained from signatures, \verb|TPM2B_Attest| structures, certificate signing requests (CSRs), certificates, and pairs of messages. All other messages either contain no additional information (i.e., keys and random numbers) or the information is concealed (i.e., hash digests and encryptions). These messages are modeled ideally in that a public key reveals nothing about its corresponding private key and there are no hash collisions.
 
-Each command and its execution is modeled abstractly. I do not attempt to model the computational intricacies of true cryptography. Command execution is defined as an inductive proposition relating an initial state pair, a command, and a final state pair. This resulting model is in fact a labeled transition system. A labeled transition system is defined as a triple $(S,L,T)$ where $S$ is a set of states, $L$ is a set of labels, and $T \subseteq S \times L \times S$ is a labeled transition relation. In this case, $S$ is the set of \verb|tpm_state * state| pairs; $L$ is the set of elements in the \verb|command| type; and $T$ is the \verb|execute| relation. 
-\begin{figure}[h]
-\begin{lstlisting}[language=Coq]
-Inductive execute : tpm_state * state -> command -> tpm_state * state -> Prop
-\end{lstlisting}
-\caption{Type Signature of Execute Relation}
-\end{figure}
-The \verb|tpm_state| and \verb|state| types are aliases for a list of messages. These types are implemented as a list only for convenience; they are treated as a set in all practical aspects (i.e., ordering and duplicates are ignored). The \verb|tpm_state| type is intended to contain messages that a restricted signing key may operate on. Recall from Section 2.1 that these messages may be in one of two forms: (1) objects constructed from TPM-internal data or (2) digests produced by signature hash operations. Messages in form 1 include private keys and PCRs --- although the latter are not yet included in this model. 
+An entity may learn additional messages from a collection of known
+messages. For example, given a message in the form
+\verb|signature m k|, the message \verb|m| may be deduced. Whereas
+given a message in the form \verb|encryptedCredential n g k|, no
+messages may be deduced. Message inference is modeled in two
+equivalent ways: (i) as a recursive function \verb|inferFrom|; and
+(ii) as an inductive proposition \verb|inferrable|. These definitions
+are proven equivalent and may be used interchangeably.  Additional
+messages may be inferred from signatures, \verb|TPM2B_Attest|
+structures, certificate signing requests (CSRs), certificates, and
+pairs of messages. All other messages either contain no additional
+information or the information is concealed.
 
-Due to the abstract, symbolic nature of this model, several TPM commands are intentionally excluded from the \verb|command| type. This results specifically from an inability to truly capture the cryptographic properties of randomness. Randomness plays a vital role in the real-life implementation of keys and nonces by preventing them from being guessed. Since I am unable to preserve this property in my model, I choose to eliminate all commands that generate a key or nonce. Therefore, a message of either of these types must be generated from or inferred from some other message or be in the initial state. 
+Command execution is defined as an inductive proposition relating an
+initial state pair, a command, and a final state pair defining a
+labeled transition system. We define a labeled transition system in
+the canonical fashion as a triple $(S,L,\rightarrow)$ where $S$ is a
+set of states, $L$ is a set of labels, and
+$\rightarrow \subseteq S \times L \times S$ is a labeled transition
+relation. In this case, $S$ is the set of \verb|tpm_state * state|
+pairs; $L$ is the set of elements in the \verb|command| type; and
+$\rightarrow$ is the \verb|execute| relation.
 
-Each command included in this model corresponds with exactly one constructor in the \verb|execute| relation (excluding \verb|TPM2_Sign| which corresponds with two). Each constructor possesses its own distinctive conditions that must be met for execution to be successful. These conditions are manifested in several ways: constructors pattern match on the command's inputs, some inputs must be in the initial state, and the results must be in the final state.
+% \begin{figure}[h]
+% \begin{lstlisting}[language=Coq]
+% Inductive execute : tpm_state * state -> command -> tpm_state * state -> Prop
+% \end{lstlisting}
+% \caption{Type Signature of Execute Relation}
+% \end{figure}
 
-\begin{figure}[h]
+The \verb|tpm_state| and \verb|state| types are lists of messages. The
+\verb|tpm_state| type contains messages that a restricted signing key
+may operate on. Recall from Section 2.1 that these messages may be in
+one of two forms: (1) objects constructed from TPM-internal data or
+(2) digests produced by signature hash operations. Messages in form 1
+include private keys and PCRs --- although the latter are not yet
+included in this model.
+
+Each command corresponds with exactly one constructor in the
+\verb|execute| relation with the exception of \verb|TPM2_Sign| that
+corresponds with two. Each constructor possesses its own distinctive
+conditions that must be met for execution to succeed. These
+conditions are manifested in several ways: constructors pattern match
+on the command's inputs, some inputs must be in the initial state, and
+the results must be in the final state. 
+
+\begin{figure}[hbtp]
   \begin{footnotesize}
 \begin{lstlisting}[language=Coq]
 Inductive command : Type :=
@@ -369,36 +409,96 @@ Inductive command : Type :=
 \end{lstlisting}
 \end{footnotesize}
 \caption{Command data structure.}
+\label{fig:command-model}
 \end{figure}
 
 The \verb|TPM2_Hash| command performs a cryptographic hash operation
 on a piece of data. This data may be any message that is known to the
-entity performing the command; this message must be contained in the
-initial \verb|state|. The result of the operation is abstractly
-defined using the opaque \verb|hash| constructor and is stored in both
-the final \verb|tpm_state| and \verb|state|. Only one command may be
-used to determine the contents of a hash digest, that is, the
-\verb|CheckHash| command which verifies that the contents of a hash
-digest match a particular plaintext message. Both the hash digest and
-the plaintext message must be contained in the initial \verb|state|. 
+entity performing the command \verb|state|. The result of the
+operation is abstractly defined using the opaque \verb|hash|
+constructor and is stored in both the final \verb|tpm_state| and
+\verb|state|. Only one command may be used to determine the contents
+of a hash digest, that is, the \verb|CheckHash| command which verifies
+that the contents of a hash digest match a particular plaintext
+message. Both the hash digest and the plaintext message must be
+contained in the initial \verb|state|.
 
-The \verb|TPM2_Sign| command generates a signature over a message using the specified private key. There are several conditions for successful execution. For one, the key must have the \verb|Sign| attribute set. Additionally, the key must be loaded on the TPM (i.e., be contained in the initial \verb|tpm_state|). The conditions then differ based on the status of the private key's \verb|Restricted| attribute; the \verb|execute| relation includes one constructor for each a restricted and nonrestricted key. If the key does not have the \verb|Restricted| attribute set, then the message must simply be in the initial \verb|state|. On the other hand, if the key does have the \verb|Restricted| attribute set, then the message must be in the initial \verb|tpm_state|. As discussed above, these messages may be TPM-internal objects or hash digests. In practice, the \verb|TPM2_Hash| command produces a ticket containing a validation structure which indicates that the resulting hash was produced by the TPM and is safe to sign; this ticket is then passed to the \verb|TPM2_Sign| command. In the model, these tickets are handled implicitly: the hash digest produced by \verb|TPM2_Hash| is added to its final \verb|tpm_state| so that a subsequent signing operation may have the hash digest in its initial \verb|tpm_state|. 
+The \verb|TPM2_Sign| command generates a signature over a message
+using the specified private key.  To succeed the key must have the
+\verb|Sign| attribute set and the key must be present in
+\verb|tpm_state|. Execution then differs based on the status of the
+private key's \verb|Restricted| attribute. If the key does not have
+the \verb|Restricted| attribute set the message must simply be in
+\verb|state|. If the key does have the \verb|Restricted| attribute
+set, the message must be in the initial \verb|tpm_state|.
 
-The \verb|TPM2_Certify| command proves than an object is loaded in the TPM by producing a signed \verb|TPM2B_Attest| structure. The command requires two inputs: a public key to be certified and a private key to sign the attestation structure. The private key must have the \verb|Sign| attribute set and must be loaded on the TPM. Upon recieving a request to execute the \verb|TPM2_Certify| command, the TPM verifies that the inverse of the public key parameter is loaded on the TPM as well. Messages produced by the \verb|TPM2_Sign| and \verb|TPM2_Certify| commands are defined using the \verb|signature| constructor. A signature may be verified against a public key using the \verb|CheckSig| command. If the provided public key is the inverse of the private key which performed the signature, then the check succeeds.
+The \verb|TPM2_Certify| command is proof that an object is loaded in
+the TPM by producing a signed \verb|TPM2B_Attest| structure. The
+command requires two inputs: a public key to be certified and a
+private key to sign the attestation structure. The private key must
+have the \verb|Sign| attribute set and must be loaded. To execute, the
+TPM verifies the public key parameter's inverse is also
+loaded.
 
-The \verb|TPM2_MakeCredential| command is used when a remote entity, especially a CA, desires to affirm that some private key is loaded on the same TPM as a particular EK. This command produces a message with the \verb|encryptedCredential| constructor and requires three inputs: the cryptographic name of a key to be credentialed, a secret, and a public EK. The cryptographic name of a key is produced by hashing its public area with its associated hash algorithm and prepending the Algorithm ID of the hashing algorithm. This model abstracts away most of these details and simply uses the hash digest of a public key in place of its true cryptographic name.   
-The \verb|TPM2_ActivateCredential| command is used by the recipient of an encrypted credential blob to release its secret. 
-The secret contained in an encrypted credential blob is only released if the credentialed key is loaded on the same TPM as the EK.
-When executing the \verb|TPM2_ActivateCredential| command, the TPM first decrypts the blob with the EK then verifies that the private key corresponding with the name field is loaded on the TPM as well. The secret is only released if both of these steps succeed. The secret value may then be returned to the remote CA so that they may validate the result.
+Messages produced by the \verb|TPM2_Sign| and \verb|TPM2_Certify|
+commands are defined using the \verb|signature| constructor. A
+signature may be verified against a public key using the
+\verb|CheckSig| command. If the provided public key is the inverse of
+the private key which performed the signature, then the check
+succeeds.
 
-The \verb|MakeCSR_IDevID| command produces a \verb|TCG_CSR_IDevID| structure.
- A \verb|TCG_CSR_IDevID| is a certificate signing request (CSR) that contains the data required to couple an IAK to a TPM-containing device. Additionally, it may include the certification information required for an IDevID if one wishes to produce both the IAK and IDevID certificates in a single pass. In particular, this structure is used any time a provisioning procedure uses the EK certificate.  In this model, I only include the fields necessary for creating an IAK certificate, namely device-identifying information, an EK certificate, and a public key to be certified. The \verb|MakeCSR_LDevID| command is similar to the \verb|MakeCSR_IDevID| command except that it produces a \verb|TCG_CSR_LDevID| structure which includes the certification information for an LAK or LDevID. In the model, I only include the fields necessary for creating an LAK certificate, namely a signed \verb|TPM2B_Attest| structure and an IAK certificate.
+The \verb|TPM2_MakeCredential| command is used when a remote entity,
+desires to affirm that some private key is loaded on the same TPM as a
+particular EK. This command produces a message with the
+\verb|encryptedCredential| constructor and requires three inputs: the
+cryptographic name of a key to be credentialed; a secret; and a public
+EK. The cryptographic name of a key is produced by hashing its public
+area with its associated hash algorithm and prepending the Algorithm
+ID of the hashing algorithm.
 
-The \verb|CheckCert| command verifies a signature over a certificate against a public key. One should check an EK certificate against the public key of the TPM Manufacturer's CA, an IAK or IDevID certificate against the public key of the OEM's CA, and an LAK or LDevID certificate against the public key of the Owner's CA.
-The \verb|CheckAttributes| command verifies that a public key has all of the provided attributes. In practice, this is done by checking the \verb|TPMA_Object|  bits of the key. In the model, these values are stored within the \verb|Restricted|, \verb|Sign|, \verb|Decrypt|, and \verb|FixedTPM| fields of the \verb|pubKey| type. In order to check the attributes of a particular key, one must have have knowledge of that key. The key need not be loaded on one's own TPM though since this command is typically used to check the attributes of some external entity's key. And lastly, the \verb|MakePair| command combines two messages into a single message using the \verb|pair| constructor.
+The \verb|TPM2_ActivateCredential| command is used by the recipient of
+an encrypted credential blob to release its secret.  The secret
+contained in an encrypted credential blob is only released if the
+credentialed key is loaded on the same TPM as the EK.  When executing
+the \verb|TPM2_ActivateCredential| command, the TPM first decrypts the
+blob with the EK then verifies that the private key corresponding with
+the name field is also loaded. The secret is only released if both
+steps succeed. The secret value may then be returned to the remote CA
+so that they may validate the result.
 
-Commands in the model are sequenced linearly by the \verb|sequence| type which is identical in structure to the Coq type \verb|list|. Sequential command execution is defined as an inductive proposition relating an initial state pair, a command sequence, and a final state pair. Sequential execution is done by first executing the command at the head of the list using the single command execution relation \verb|execute| followed by executing the sequence at the tail of the list using the sequential execution relation \verb|seq_execute|. The final state pair produced by executing the single command is used as the initial state pair for the subsequent sequence. This recursive structure allows for the convenient use of induction in many proofs.
-\begin{figure}[h]
+The \verb|MakeCSR_IDevID| command produces a \verb|TCG_CSR_IDevID|
+structure.  A \verb|TCG_CSR_IDevID| is a certificate signing request
+(CSR) that contains the data required to couple an IAK to a
+TPM-containing device.  In particular, this structure is used any time
+a provisioning procedure uses the EK certificate.  The
+\verb|MakeCSR_LDevID| command is similar except that it produces a
+\verb|TCG_CSR_LDevID| structure that includes the certification
+information for an LAK or LDevID.
+
+The \verb|CheckCert| command verifies a signature over a certificate
+against a public key. One should check an EK certificate against the
+public key of the TPM Manufacturer's CA, an IAK or IDevID certificate
+against the public key of the OEM's CA, and an LAK or LDevID
+certificate against the public key of the Owner's CA.  The
+\verb|CheckAttributes| command verifies a public key has all provided
+attributes.  In order to check the attributes, one must have have
+knowledge of that key. The key need not be loaded on a TPM since this
+command is typically used to check the attributes of some external
+entity's key.
+
+Commands are sequenced linearly by the \verb|sequence| type which is
+identical in structure to the Coq type \verb|list|. Sequential command
+execution is defined as an inductive proposition relating an initial
+state pair, a command sequence, and a final state pair. Sequential
+execution is done by first executing the command at the head of the
+list using the single command execution relation \verb|execute|
+followed by executing the sequence at the tail of the list using the
+sequential execution relation \verb|seq_execute|. The final state pair
+produced by executing the single command is used as the initial state
+pair for the subsequent sequence. This recursive structure allows for
+the convenient use of induction in many proofs.
+
+\begin{figure}[hbtp]
 \begin{lstlisting}[language=Coq]
 Inductive sequence : Type :=
 | Sequence : command -> sequence -> sequence
@@ -414,42 +514,87 @@ Inductive seq_execute : tpm_state * state -> sequence -> tpm_state * state -> Pr
 | SE_Done : forall ini,
     seq_execute ini Done ini.
 \end{lstlisting}
-\caption{Model of Command Sequences}
+\caption{Command Sequence Model}
+\label{fig:command-sequence-model}
 \end{figure}
 
-In fact, I prove several interesting and useful properties of the \verb|seq_execute| relation. First, sequential execution is deterministic. Given an initial state pair and a command sequence, there is at most one final state pair which satisfies the \verb|seq_execute| relation. This means that \verb|seq_execute| is in fact a partial function. Next, sequential execution is an expansion. Given a related initial state pair, command sequence, and final state pair, the initial state is always a subset of the final state. This means that commands do not remove elements from the state. The expansion property may not be contained in future iterations of this model; it does seem possible that the addition of new commands may result in the removal of elements from an entity's state.
-\begin{figure}[h]
-  \begin{lstlisting}[language=Coq]
-  Theorem seq_exec_deterministic : forall ini s fin1 fin2,
-    seq_execute ini s fin1 ->
-    seq_execute ini s fin2 ->
-    fin1 = fin2.
-  
-  Theorem seq_exec_expansion : forall iniTPM ini s finTPM fin,
-    seq_execute (iniTPM,ini) s (finTPM,fin) ->
-    (iniTPM \subsetOf finTPM) /\ (ini \subsetOf fin).
-  \end{lstlisting}
-  \caption{Properties of Sequential Execution}
-  \end{figure}
+We prove several interesting intermediate properties of the
+\verb|seq_execute| relation. First, sequential execution is
+deterministic. Given an initial state pair and a command sequence,
+there is at most one final state pair which satisfies the
+\verb|seq_execute| relation. This means that \verb|seq_execute| is in
+fact a partial function. Next, sequential execution is an
+expansion. Given a related initial state pair, command sequence, and
+final state pair, the initial state is always a subset of the final
+state. This means that commands do not remove elements from the
+state. The expansion property may not be contained in future
+iterations as it seems possible that additional commands may result in
+element removal from an entity's state.
 
-It is useful to know whether a particular command is contained within a sequence. Therefore, I define a function \verb|command_in_sequence| which determines whether a provided command is an element of a provided sequence. This function is implemented by checking the command at the head of the list against the provided command. If they match, return True. Otherwise, recursively call the function on the tail of the sequence.
-For two commands to match, not only must the commands itself match but all of their inputs as well. To precisely describe this situation, this function utilizes the decidable equality property over the \verb|command| type. This requires declaring and proving that the \verb|command| type and all of the types it relies on (e.g., \verb|message|, \verb|pubKey|, \verb|signedCert|) are members of the \verb|DecEq| class. These proofs may be conveniently automated.
+% \begin{figure}[hbtp]
+%   \begin{lstlisting}[language=Coq]
+%   Theorem seq_exec_deterministic : forall ini s fin1 fin2,
+%     seq_execute ini s fin1 ->
+%     seq_execute ini s fin2 ->
+%     fin1 = fin2.
+  
+%   Theorem seq_exec_expansion : forall iniTPM ini s finTPM fin,
+%     seq_execute (iniTPM,ini) s (finTPM,fin) ->
+%     (iniTPM \subsetOf finTPM) /\ (ini \subsetOf fin).
+%   \end{lstlisting}
+%   \caption{Properties of Sequential Execution}
+%   \label{fig:sequential-execution-properties}
+%   \end{figure}
+
+% For two commands to match, not only must the commands itself match but
+% all of their inputs as well. To precisely describe this situation,
+% this function utilizes the decidable equality property over the
+% \verb|command| type. This requires declaring and proving that the
+% \verb|command| type and all of the types it relies on (e.g.,
+% \verb|message|, \verb|pubKey|, \verb|signedCert|) are members of the
+% \verb|DecEq| class. These proofs may be conveniently automated.
 %
 %
 %
 \section{Identity Provisioning}
-To mantain a cryptographic evidentiary chain linking a DevID to a specific TPM and device, the CA should follow certain provisioning procedures. The TCG describes several such procedures in their specification ``TPM 2.0 Keys for Device Identity and Attestation'' \citep{DevIDSpec-TCG}. 
-This chapter considers two of these procedures in detail: OEM creation of an IAK certificate based on an EK certificate and Owner creation of an LAK certificate based on an IAK certificate. I select these two protocols since they bear the most significance in enrollment of additional DevIDs (recall that, in a chain of certificates, IAK certificates may be root nodes and LAK certificates may be parent nodes). For each protocol, the specification outlines steps for the CA and the certificate-requesting entity to perform.
-Furthermore, the specification claims that each protocol provides certain assurances. Each assurance manifests as an assertion regarding either TPM-residency, key attributes, or previously-issued certificates and provides the basis for the resulting cryptographic evidentiary chain formed by a chain of certificates. Therefore, it is of utmost importance to verify that each protocol guarantees its associated assurances.
-Since the TCG themselves do not provide proofs or clear justifications to support these claims, \textit{the goal of this work is to abstractly model these two protocols and formally verify their expected assurances}.
 
+To mantain a cryptographic evidentiary chain linking a DevID to a
+specific TPM and device, the CA should follow certain provisioning
+procedures. The TCG describes several such procedures in their
+specification ``TPM 2.0 Keys for Device Identity and Attestation''
+\citep{DevIDSpec-TCG}.  We consider two procedures in detail: OEM
+creation of an IAK certificate based on an EK certificate and Owner
+creation of an LAK certificate based on an IAK certificate. These
+protocols bear the most significance in enrollment of additional
+DevIDs. For each protocol, the specification outlines steps for the CA
+and the certificate-requesting entity .  Furthermore, the
+specification claims that each protocol provides certain
+assurances. Each assurance manifests as an assertion regarding either
+TPM-residency, key attributes, or previously-issued certificates and
+provides the basis for the resulting cryptographic evidentiary chain
+formed by a chain of certificates. Therefore, it is important to
+verify that each protocol guarantees its associated assurances.
 
-I model these protocols within Coq's \verb|Module Type| mechanism. This mechanism allows for the inclusion of parameters that provide the necessary flexibility to describe each protocol generally. Additionally, this mechanism allows for axioms to be defined. When instantiating a \verb|Module Type|, one must provide concrete values for all parameters and prove that all axioms hold.
-In conducting these verifications, I consider two scenarios: (1) the certificate-requesting entity and the CA are both trusted to execute their steps correctly, and (2) only the CA is trusted to execute its steps correctly. The specification does not state which of these assumptions they reason under. 
-Because trust for creation of a new certificate is based on an existing certificate, these scenarios include the presupposition that previously-issued certificates imply the associated assurances of their provisioning protocols. For convenience and clarity, this chapter inspects each of these protocols in the reverse order that their dependencies entail. I proceed with this ordering because the LAK provisioning procedure is approximately contained within the IAK provisioning procedure. 
+Our model uses Coq's \verb|Module Type| mechanism to parameterize
+protocol details and specify necessary properties considering those
+parameters.  When instantiating a \verb|Module Type|, one must provide
+concrete values for all parameters and prove all properties.  In
+conducting these verification goals, we consider two scenarios: (i)
+the certificate-requesting entity and the CA are both trusted to
+execute their steps correctly; and (ii) only the CA is trusted to
+execute its steps correctly. The specification does not state which of
+these assumptions they reason under.  Because trust for creation of a
+new certificate is based on an existing certificate, these scenarios
+include the presupposition that previously-issued certificates imply
+the associated assurances of their provisioning protocols.
 
 \subsection{Owner Creation of LAK Certificate based on IAK Certificate}
-The TCG's specification claims that the following procedure provides these assurances: (A) the LAK has good attributes and (B) the LAK is  loaded on the same TPM as the IAK. These assurances correspond exactly with the Chain of Trust line C in Figure \ref{fig:cert_rel}. 
+
+The TCG's specification claims that the following procedure provides
+these assurances: (i) the LAK has good attributes; and (ii) the LAK is
+loaded on the same TPM as the IAK. These assurances correspond exactly
+with the Chain of Trust line C in Figure \ref{fig:cert_rel}.
+
 \begin{enumerate}[itemsep=0pt,parsep=0pt,partopsep=0pt]
   \setcounter{enumi}{-1}
   \item The Owner creates and loads the LAK
@@ -473,30 +618,30 @@ The TCG's specification claims that the following procedure provides these assur
   \item If all of the checks succeed, the CA issues the LAK certificate to the Owner
 \end{enumerate}
 
-
 Modeling this protocol begins by defining parameters for each of the Owner and the CA. These parameters correspond with the elements required by the Owner and the CA to perform their respective parts of the procedure. However, elements intended to be received during the communication phases of the protocol are excluded. Specifically, these parameters intend to represent the elements that must be known by each entity \textit{prior} to the start of the protocol. Therefore, the Owner has its LAK, IAK, and IAK certificate, and the CA has its own key and the public key of the OEM's CA. The parameters only explicitly include the public key values of those listed keys pairs. Private key values are computed by taking the inverse of the corresponding public key; these values are stored in the \verb|privLAK|, \verb|privIAK|, and \verb|privCA| variables. To enforce the randomness of cryptographic keys, I define an axiom that requires all key parameters to be pairwise distinct. 
-\begin{figure}[h]
-\begin{lstlisting}[language=Coq]
-(* Owner parameters *)
-Parameter pubLAK : pubKey.
-Parameter pubIAK : pubKey.
-Parameter certIAK : signedCert.
 
-(* CA parameters *)
-Parameter pubCA : pubKey.
-Parameter pubOEM : pubKey.
+% \begin{figure}[hbtp]
+% \begin{lstlisting}[language=Coq]
+% (* Owner parameters *)
+% Parameter pubLAK : pubKey.
+% Parameter pubIAK : pubKey.
+% Parameter certIAK : signedCert.
 
-(* All keys are pairwise distinct *)
-Axiom keys_distinct :
-  pubLAK <> pubIAK /\
-  pubLAK <> pubCA /\
-  pubLAK <> pubOEM /\
-  pubIAK <> pubCA /\
-  pubIAK <> pubOEM /\
-  pubCA <> pubOEM.
-\end{lstlisting}
-\caption{Parameters of LAK Provisioning Procedure}
-\end{figure}
+% (* CA parameters *)
+% Parameter pubCA : pubKey.
+% Parameter pubOEM : pubKey.
+
+% (* All keys are pairwise distinct *)
+% Axiom keys_distinct :
+%   pubLAK <> pubIAK /\
+%   pubLAK <> pubCA /\
+%   pubLAK <> pubOEM /\
+%   pubIAK <> pubCA /\
+%   pubIAK <> pubOEM /\
+%   pubCA <> pubOEM.
+% \end{lstlisting}
+% \caption{Parameters of LAK Provisioning Procedure}
+% \end{figure}
 
  Similar to how the parameters are separated by ownership, the procedure itself may be separated as well. That is, the procedure may be regarded as the composition of two parts: the Owner's steps (i.e., Steps 0-5) followed by the CA's steps (i.e., Steps 6-7).
  With that in mind, each part of the procedure may be abstractly modeled using the parameters defined above and the sequential command construction defined in Chapter 4. 
@@ -548,6 +693,7 @@ Definition steps_CA (msg : message) (iak lak : pubKey) (cert : signedCert) : Pro
 \caption{Model of LAK Provisioning Procedure}
 \label{fig:lak_model}
 \end{figure}
+
 I construct an object of \verb|sequence| type for the Owner and an object of function type for the CA. Constructing the Owner's steps is straightforward. Since this model disallows the arbitrary creation of keys, Step 0 is assumed to have been performed prior; the results of Step 0 are in fact already encapsulated in the \verb|pubLAK| parameter and \verb|privLAK| variable. Then each remaining step of the Owner corresponds with exactly one command in the model, namely \verb|TPM2_Certify| for Step 1, \verb|MakeCSR_LDevID| for Step 2, \verb|TPM2_Hash| for Step 3, \verb|TPM2_Sign| for Step 4, and \verb|MakePair| for Step 5. 
 Constructing the CA's steps is more complex as it relies on external input (i.e., the certification request produced by the Owner's steps). Although this complexity leads to a convoluted function, there is still a straightforward correspondence between the function definition and the real-life procedure. First, the CA waits to receive a certification request from the Owner (see the \verb|msg| input). The request must be in a specific format to be considered valid (see the match statement on \verb|msg|). The CA then executes Step 6 of the procedure (see the sequence within \verb|seq_execute|). If execution succeeds, the CA issues the LAK certificate to the Owner (see the \verb|Prop| return type). I include several additional parameters and criteria to serve as a method for referencing certain elements of the certification request within proof statements. These definitions provide the framework necessary for describing the conditions of each scenario. 
 
@@ -559,7 +705,8 @@ Let us attempt formal verification of Assurance B first under the conditions of 
 I begin by examining the Owner's steps and its requirements. These requirements can be quantitatively described by a minimal initial state pair. Given a sequence, a minimal initial state pair is defined as the smallest \verb|tpm_state| and \verb|state| that allows for successful execution of the sequence. The proof statement describing this property is constructed by two parts: (1) the minimal initial state is a lower bound on the set of possible initial states and (2) the minimal initial state is sufficient for successful execution. I build a minimal initial state pair for \verb|steps1to5_Owner| using the following intuition: (i) the private LAK and private IAK are loaded on the same TPM because the LAK is certified by the IAK and (ii) the IAK certificate is known to the Owner because it is included in the CSR.  
 The proof of the lower bound property uses this exact intuition.
 On the other hand, the proof of the sufficiency property uses the constructors of the \verb|execute| relation to demonstrate that there exists a final state pair which satisfies the \verb|seq_execute| relation for the minimal initial state pair and \verb|steps1to5_Owner|. This proof relies on two assumptions, namely that the IAK has good attributes and that the CA issues the LAK certificate.
-\begin{figure}[h]
+
+\begin{figure}[hbtp]
 \begin{lstlisting}[language=Coq]
 Definition iniTPM_Owner : tpm_state :=
 [ privateKey privLAK ;
@@ -584,7 +731,8 @@ This analysis of the Owner's steps' requirements in the form of a minimal initia
 
 Let us now attempt formal verification of this same goal under the conditions of scenario 2: only the CA is trusted to execute its steps correctly. This proof is troublesome and likely impossible if we make no assumptions regarding the Owner, but since the certification request and its contents must have been produced by some entity, I consider the Owner to be this entity.
 To this end, I describe the Owner and its characteristics as a series of assumptions: the Owner executes some unknown sequence of commands \verb|s|, this sequence produces some message \verb|msg| in the Owner's final \verb|state|, the Owner's initial \verb|tpm_state| may only contain private keys, the Owner's initial \verb|state| may only contain public keys and certificates, and the CA executes its prescribed sequence on the message \verb|msg|. 
-\begin{figure}[h]
+
+\begin{figure}[hbtp]
 \begin{lstlisting}[language=Coq]
 Theorem lak_and_iak_in_TPM : forall s iniTPM ini finTPM fin msg iak lak cert,
   seq_execute (iniTPM, ini) s (finTPM, fin) -> 
@@ -597,6 +745,7 @@ Theorem lak_and_iak_in_TPM : forall s iniTPM ini finTPM fin msg iak lak cert,
 \caption{Final Verification Goal for LAK Provisioning Procedure}
 \label{fig:lak_goal}
 \end{figure}
+
 I argue that these assumptions are reasonable and do not corrupt the conditions regarding the trustworthiness of the Owner. It is important to note that the LAK, IAK, and IAK certificate are universally quantified in these assumptions and make no reference to the Owner's parameters. In particular, these assumptions aim only to constrain the production of the certification request (i.e., \verb|msg|) and its contents to the Owner. 
 The restrictions on the Owner's initial state pair are the main contributors to enforcement of this constraint. Due to the nature of command execution, the certification request and all of its contents must have been either produced by a command or contained in the inital state pair. 
 Therefore, the restrictions placed on the initial state pair allow only exactly those messages which are impossible to be generated by a command sequence.
@@ -653,28 +802,38 @@ The TCG's specification claims that the following procedure provides these assur
 
 This procedure is similar to the one described in the previous section. In fact, nearly all steps of the LAK provisioning protocol---specifically all steps except for Steps 1 and 6c---are approximately included in this procedure. Therefore, this section need only expound on the details which differ from the previous verification process. 
 
-Modeling this protocol begins by defining parameters for each of the OEM and CA. The OEM has its IAK, EK, EK certificate, and device identifying information and the CA has its own key, the public key of the TPM Manufacturer's CA, and a secret nonce.
-\begin{figure}[h]
-\begin{lstlisting}[language=Coq]
-(* OEM parameters *)
-Parameter pubIAK : pubKey.
-Parameter pubEK : pubKey.
-Parameter certEK : signedCert.
-Parameter devInfo : deviceInfoType.
+Modeling this protocol begins by defining parameters for each of the
+OEM and CA. The OEM has its IAK, EK, EK certificate, and device
+identifying information and the CA has its own key, the public key of
+the TPM Manufacturer's CA, and a secret nonce.
 
-(* CA parameters *)
-Parameter pubCA : pubKey.
-Parameter pubTM : pubKey.
-Parameter nonce : randType.
-\end{lstlisting}
-\caption{Parameters of IAK Provisioning Procedure}
-\end{figure}
+% \begin{figure}[hbtp]
+% \begin{lstlisting}[language=Coq]
+% (* OEM parameters *)
+% Parameter pubIAK : pubKey.
+% Parameter pubEK : pubKey.
+% Parameter certEK : signedCert.
+% Parameter devInfo : deviceInfoType.
+
+% (* CA parameters *)
+% Parameter pubCA : pubKey.
+% Parameter pubTM : pubKey.
+% Parameter nonce : randType.
+% \end{lstlisting}
+% \caption{Parameters of IAK Provisioning Procedure}
+% \end{figure}
+
 The procedure may be regarded as the composition of four parts: the OEM's initial steps (i.e., Steps 0-4) followed by the CA's initial steps (i.e., Steps 5-6) followed the OEM's final step (i.e., Step 7) followed by the CA's final steps (i.e., Steps 8-9). The initial steps of the OEM and the OEM's CA are constructed similarly to the steps of the Owner and the Owner's CA respectively. In any case, the OEM's final step is naturally constructed as a simple function; first the OEM waits to receive a challenge blob from the CA, then the OEM executes Step 7 of the procedure. As a result of these definitions, the CA's final steps are implicit in the proof statements and do not require an explicit definition. 
 
-Now proving Assurance A is trivial and proceeds identically to the corresponding proof in the previous section.
-Proving Assurance C is in fact quite similar to this proof as well. The comand \verb|CheckCert (Cert k0 id0 k_ca') pubTM| in the CA's function corresponds with Step 5c of the provisioning procedure (see that the CA's function binds the EK to the variable \verb|k0| and the EK certificate to the message \verb|Cert k0 id0 k_ca'|). 
-\vspace{2em}
-\begin{figure}[h!]
+Now proving Assurance A is trivial and proceeds identically to the
+corresponding proof in the previous section. Proving Assurance C is in
+fact quite similar to this proof as well. The command
+\verb|CheckCert (Cert k0 id0 k_ca') pubTM| in the CA's function
+corresponds with Step 5c of the provisioning procedure (see that the
+CA's function binds the EK to the variable \verb|k0| and the EK
+certificate to the message \verb|Cert k0 id0 k_ca'|).  Then it is clear to see that successful execution of this command directly implies that the EK certificate is valid.
+
+\begin{figure}[hbtp]
 \begin{lstlisting}[language=Coq]
 Definition steps_CA (msg : message) (ident : identifier) (ek iak : pubKey) (cert : signedCert) : Prop :=
   match msg with
@@ -706,10 +865,6 @@ Definition steps_CA (msg : message) (ident : identifier) (ek iak : pubKey) (cert
   | _ => False
   end.
 
-
-
-
-
 Definition step7_OEM (msg : message) : sequence :=
 TPM2_ActivateCredential 
     msg 
@@ -721,14 +876,13 @@ Done.
 \label{fig:iak_model}
 \end{figure}
 \vspace{4em}
-Then it is clear to see that successful execution of this command directly implies that the EK certificate is valid.
-
 
 Let us attempt formal verification of Assurance B first under the conditions of scenario 1: the OEM and the CA are both trusted to execute their steps correctly. I implement the same strategy as before, that is, I aim to show that the private IAK and private EK are contained in the OEM's minimal initial \verb|tpm_state|. I build a minimal initial state pair for the composition of \verb|steps1to4_OEM| and \verb|step7_OEM| using the following intuition: (i) the EK certificate and public IAK are known to the Owner because they are included in the CSR and (ii) the private IAK and private EK are loaded on the same TPM because the IAK is credentialed by the EK. The two required proofs to determine minimality proceed similarly to the corresponding proof in the previous section.
 
 Let us now attempt formal verification of this same goal under the conditions of scenario 2: only the CA is trusted to execute its steps correctly. 
 I describe the OEM and its characteristics as a series of assumptions: the OEM executes some unknown sequence of commands \verb|s1|, this sequence produces some message \verb|msg| in the OEM's intermediate \verb|state|, the OEM's initial \verb|tpm_state| may only contain private keys, the OEM's initial \verb|state| may only contain public keys and certificates, the CA executes its prescribed sequence on the message \verb|msg| and sends the challenge blob \verb|encryptedCredential (hash (publicKey iak)) g ek| to the OEM, the OEM executes some unknown sequence of commands \verb|s2|, this sequence releases the secret nonce value \verb|g| into the OEM's final \verb|state|. The CA's final steps are implicit in the fact that the nonce in the challenge blob is the same as the nonce in the OEM's final \verb|state|. 
-\begin{figure}[h]
+
+\begin{figure}[hptb]
 \begin{lstlisting}[language=Coq]
 Theorem iak_and_ek_in_TPM : forall s2 s1 iniTPM ini midTPM mid finTPM fin msg ident ek iak cert g,
   seq_execute   (iniTPM, ini) s1 (midTPM, mid) -> 
