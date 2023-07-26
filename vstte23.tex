@@ -56,22 +56,32 @@ Perry Alexander}
 \maketitle              % typeset the header of the contribution
 %
 \begin{abstract}
-  A secure device identifier (DevID) is an identifier that is
-  cryptographically bound to a device. Trusted Platform Module (TPM)
-  keys are an ideal choice for implementation of these identifiers.
-  The specification ``TPM 2.0 Keys for Device Identity and
-  Attestation'' by the Trusted Computing Group (TCG) describes several
-  procedures for remotely proving a key to be resident in a specific
-  device's TPM and thereby satisfying the requirements for a
-  DevID. These procedures are carefully constructed protocols that are
-  intended to be performed by a trusted Certificate Authority (CA) in
-  communication with a certificate-requesting device and are designed
-  to maintain a cryptographic evidentiary chain linking a DevID to a
-  specific TPM. The TCG claims that each protocol provides certain
-  assurances; these assurances are the basis for the resulting
-  cryptographic evidentiary chain.  We aim to determine the
-  correctness of key certification protocols by abstractly modeling
-  and formally verifying their properties.
+  The provisioning of TPM-based secure device identifiers must be
+  verified to ensure such identifiers are strongly bound to their
+  associated devices.  Appraising attestation results without such
+  assurances calls into question the integrity of trust decisions.  We
+  developed and verified two models of TCG provisioning protocols
+  ensuring that resulting secure identifiers were created in the
+  presence of keys from which they derive their trust.  As a result we
+  can be assured that device identifiers are verifiably bound to their
+  associated devices.
+% \begin{abstract}
+%   A secure device identifier (DevID) is an identifier that is
+%   cryptographically bound to a device. Trusted Platform Module (TPM)
+%   keys are an ideal choice for implementation of these identifiers.
+%   The specification ``TPM 2.0 Keys for Device Identity and
+%   Attestation'' by the Trusted Computing Group (TCG) describes several
+%   procedures for remotely proving a key to be resident in a specific
+%   device's TPM and thereby satisfying the requirements for a
+%   DevID. These procedures are carefully constructed protocols that are
+%   intended to be performed by a trusted Certificate Authority (CA) in
+%   communication with a certificate-requesting device and are designed
+%   to maintain a cryptographic evidentiary chain linking a DevID to a
+%   specific TPM. The TCG claims that each protocol provides certain
+%   assurances; these assurances are the basis for the resulting
+%   cryptographic evidentiary chain.  We aim to determine the
+%   correctness of key certification protocols by abstractly modeling
+%   and formally verifying their properties.
 
 \keywords{Secure Device Identifiers \and TPM \and Verification.}
 \end{abstract}
@@ -549,16 +559,14 @@ Inductive seq_execute : tpm_state * state -> sequence -> tpm_state * state -> Pr
 \label{fig:command-sequence-model}
 \end{figure}
 
-We prove several interesting intermediate properties of the
-\verb|seq_execute| relation. First, sequential execution is
-deterministic. Given an initial state pair and a command sequence,
-there is at most one final state pair that satisfies the
-\verb|seq_execute| relation. This means that \verb|seq_execute| is in
-fact a partial function. Next, sequential execution is an
-expansion. Given a related current state pair, command sequence, and
+We prove two intermediate properties of sequential execution. First,
+sequential execution is deterministic. Given an initial state pair and
+a command sequence, there is at most one final state pair that
+satisfies the \verb|seq_execute| relation implying that command
+sequence execution is a partial function. Second, sequential execution
+is an expansion. Given a current state pair, command sequence, and
 initial state pair, the initial state is always a subset of the final
-state. This means that commands do not remove elements from the
-state.
+state implying that command sequence execution is monotonic.
 
 % \begin{figure}[hbtp]
 %   \begin{lstlisting}[language=Coq]
@@ -595,7 +603,7 @@ creation of an IAK certificate based on an EK certificate and Owner
 creation of an LAK certificate based on an IAK certificate. These
 protocols bear the most significance in enrollment of additional
 DevIDs. For each protocol, the specification outlines steps for the CA
-and the certificate-requesting entity .  Furthermore, the
+and the certificate-requesting entity.  Furthermore, the
 specification claims that each protocol provides certain
 assurances. Each assurance manifests as an assertion regarding either
 TPM-residency, key attributes, or previously-issued certificates and
@@ -851,27 +859,26 @@ Theorem lak_and_iak_in_TPM : forall s iniTPM ini finTPM fin msg iak lak cert,
 \end{figure}
 
 These assumptions are reasonable and do not corrupt the conditions
-regarding the Owner's trustworthiness. Note that the LAK, IAK, and IAK
-certificate are universally quantified in these assumptions and make
-no reference to the Owner's parameters. In particular, these
-assumptions aim only to constrain the certification request,
-\verb|msg|, and its contents to the Owner.  The restrictions on the
-Owner's initial state pair are the main contributors to enforcement of
-this constraint. Due to the nature of command execution, the
-certification request and all of its contents must have been either
-produced by a command or contained in the initial state pair.
-Therefore, the restrictions placed on the initial state pair allow
-only exactly those messages which are impossible to be generated by a
+regarding the Owner's trustworthiness. The LAK, IAK, and IAK
+certificate are universally quantified making no reference to the
+Owner. The assumptions aim only to constrain the certification
+request, \verb|msg|, and its contents to the Owner.  The restrictions
+on the Owner's initial state pair are the main contributors to
+enforcement of this constraint. Due to the nature of command
+execution, the certification request and all of its contents must have
+be produced by a command or contained in the initial state.
+Therefore, the restrictions placed on the initial state allow only
+exactly those messages that are impossible to be generated by a
 command sequence.  The \verb|needsGeneratedTPM| function restricts the
 Owner's initial \verb|tpm_state| to the inclusion of previously
 created private keys. While the \verb|needsGenerated| function
 restricts the Owner's initial \verb|state| to the inclusion of public
-keys as well as previously issued certificates---the subject of these
-certificates may be the Owner itself or any other entity.  The Owner
-has many other messages in its state, but these restrictions disallow
-them from being used to build the certification request.
+keys as well as previously issued certificates.  The subject of these
+certificates may be the Owner itself or any other entity.  These
+restrictions disallow other messages in the Owner state from being
+used to build the certification request.
 
-The next step is to use this series of assumptions to learn more about
+The next step is using this series of assumptions to learn more about
 the Owner. We cannot directly prove the new LAK is loaded on the same
 TPM as the IAK, but we can derive an important conclusion about the
 command sequence the Owner executes. Specifically, the sequence
@@ -918,9 +925,9 @@ structure.
 \subsection{OEM Creation of IAK Certificate based on EK Certificate}
 
 The TCG's specification claims the procedure in
-Figure~\ref{fig:iak-creation} guarantees three assurances: (i) the IAK
-has good attributes; (ii) the IAK is loaded on the same TPM as the EK;
-and (iii) the EK certificate is valid. These assurances correspond
+Figure~\ref{fig:iak-creation} guarantees three assurances: (A) the IAK
+has good attributes; (B) the IAK is loaded on the same TPM as the EK;
+and (C) the EK certificate is valid. These assurances correspond
 exactly with the Proof of Residency line A in Figure
 \ref{fig:cert_rel}.
 
@@ -961,13 +968,13 @@ exactly with the Proof of Residency line A in Figure
 
 The procedure from Figure~\ref{fig:iak-creation} is similar to the one
 described in the previous section. All steps except for Steps 1 and 6c
-are included in this here. Therefore, we focus on the details that
-differ from the previous verification process.
+are included. We focus on the details that differ from the previous
+verification process.
 
-Modeling this protocol begins by defining parameters for the OEM and
-CA. The OEM has its IAK, EK, EK certificate, and device identifying
-information and the CA has its own key, the public key of the TPM
-Manufacturer's CA, and a secret nonce.
+% Modeling this protocol begins by defining parameters for the OEM and
+% CA. The OEM has its IAK, EK, EK certificate, and device identifying
+% information and the CA has its own key, the public key of the TPM
+% Manufacturer's CA, and a secret nonce.
 
 % \begin{figure}[hbtp]
 % \begin{lstlisting}[language=Coq]
@@ -1005,48 +1012,50 @@ function binds the EK to the variable \verb|k0| and the EK certificate
 to the message \verb|Cert k0 id0 k_ca'|.  Successful execution of this
 command directly implies that the EK certificate is valid.
 
-\begin{figure}[hbtp]
-\begin{lstlisting}[language=Coq]
-Definition steps_CA (msg : message) (ident : identifier) (ek iak : pubKey) (cert : signedCert) : Prop :=
-  match msg with
-  | (pair (TCG_CSR_IDevID (Device_info id) (Cert k0 id0 k_ca') k) (signature m k')) =>
-        ident = (Device_info id) /\ ek = k0 /\ iak = k /\ cert = (Cert k0 id0 k_ca') /\
-        seq_execute   (iniTPM_CA, inferFrom msg ++ ini_CA)
-                      (CheckHash 
-                          msg 
-                         (TCG_CSR_IDevID (Device_info id) (Cert k0 id0 k_ca') k) ;;
-                       CheckSig 
-                         (signature m k') 
-                          k ;;
-                       CheckCert 
-                         (Cert k0 id0 k_ca') 
-                          pubTM ;;
-                       CheckAttributes 
-                          k 
-                          Restricting Signing NonDecrypting Fixing ;;
-                       TPM2_Hash 
-                         (publicKey k);;
-                       TPM2_MakeCredential 
-                         (hash (publicKey k))
-                          nonce
-                          k0 ;;
-                       Done)
-                      (hash (publicKey k) ::iniTPM_CA, 
-                       encryptedCredential (hash (publicKey k)) nonce k0 :: hash (publicKey k) 
-                       ::inferFrom msg ++ ini_CA)
-  | _ => False
-  end.
+%% Figure is not referenced in the paper, thus pulling it to get back
+%% a page
+% \begin{figure}[hbtp]
+% \begin{lstlisting}[language=Coq]
+% Definition steps_CA (msg : message) (ident : identifier) (ek iak : pubKey) (cert : signedCert) : Prop :=
+%   match msg with
+%   | (pair (TCG_CSR_IDevID (Device_info id) (Cert k0 id0 k_ca') k) (signature m k')) =>
+%         ident = (Device_info id) /\ ek = k0 /\ iak = k /\ cert = (Cert k0 id0 k_ca') /\
+%         seq_execute   (iniTPM_CA, inferFrom msg ++ ini_CA)
+%                       (CheckHash 
+%                           msg 
+%                          (TCG_CSR_IDevID (Device_info id) (Cert k0 id0 k_ca') k) ;;
+%                        CheckSig 
+%                          (signature m k') 
+%                           k ;;
+%                        CheckCert 
+%                          (Cert k0 id0 k_ca') 
+%                           pubTM ;;
+%                        CheckAttributes 
+%                           k 
+%                           Restricting Signing NonDecrypting Fixing ;;
+%                        TPM2_Hash 
+%                          (publicKey k);;
+%                        TPM2_MakeCredential 
+%                          (hash (publicKey k))
+%                           nonce
+%                           k0 ;;
+%                        Done)
+%                       (hash (publicKey k) ::iniTPM_CA, 
+%                        encryptedCredential (hash (publicKey k)) nonce k0 :: hash (publicKey k) 
+%                        ::inferFrom msg ++ ini_CA)
+%   | _ => False
+%   end.
 
-Definition step7_OEM (msg : message) : sequence :=
-TPM2_ActivateCredential 
-    msg 
-    privEK 
-    privIAK ;;
-Done.
-\end{lstlisting}
-\caption{Partial Model of IAK Provisioning Procedure}
-\label{fig:iak_model}
-\end{figure}
+% Definition step7_OEM (msg : message) : sequence :=
+% TPM2_ActivateCredential 
+%     msg 
+%     privEK 
+%     privIAK ;;
+% Done.
+% \end{lstlisting}
+% \caption{Partial Model of IAK Provisioning Procedure}
+% \label{fig:iak_model}
+% \end{figure}
 
 We now verify Assurance B when the OEM and the CA are both trusted to
 execute their steps correctly. We implement the same strategy as
