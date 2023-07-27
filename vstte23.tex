@@ -384,17 +384,17 @@ Inductive message : Type :=
 \label{fig:message-model}
 \end{figure}
 
-An entity may learn additional messages from a collection of known
-messages. For example, given a message in the form
+An entity may derive additional messages from a collection of known
+messages. For example, given a message of the form
 \verb|signature m k|, the message \verb|m| may be deduced. Whereas
 given a message in the form \verb|encryptedCredential n g k|, no
 messages may be deduced. Message inference is modeled in two
-equivalent ways: (i) a recursive function \verb|inferFrom|; and
-(ii) an inductive proposition \verb|inferrable|.  Additional
-messages may be derived from signatures, \verb|TPM2B_Attest|
-structures, certificate signing requests (CSRs), certificates, and
-pairs of messages. All other messages either contain no additional
-information or the information is concealed.
+equivalent ways: (i) a recursive function \verb|inferFrom|; and (ii)
+an inductive proposition \verb|inferrable|.  Additional messages may
+be derived from signed messages, \verb|TPM2B_Attest| structures,
+certificate signing requests (CSRs), certificates, and message
+pairs. Other messages either contain no additional information or
+information is concealed.
 
 Command execution is defined as an inductive proposition relating an
 current state pair, a command, and a next state pair defining a
@@ -403,10 +403,8 @@ the canonical fashion as a triple $(S,L,\rightarrow)$ where $S$ is a
 set of states, $L$ is a set of labels, and
 $\rightarrow \subseteq S \times L \times S$ is a labeled transition
 relation. In this case, $S$ is the set of \verb|tpm_state * state|
-pairs; $L$ is the set of elements in the \verb|command| type; and
-$\rightarrow$ is the \verb|execute| relation.  Each \verb|command|
-constructor is associated with at least one \verb|execute| constructor
-to define command execution.
+pairs; $L$ is the set of \verb|command| values; and $\rightarrow$ is
+the \verb|execute| relation.
 
 % \begin{figure}[h]
 % \begin{lstlisting}[language=Coq]
@@ -629,22 +627,22 @@ with the Chain of Trust line C in Figure \ref{fig:cert_rel}.
   \setcounter{enumi}{-1}
   \item The Owner creates and loads the LAK
   \item The Owner certifies the LAK with the IAK
-  \item The Owner builds the CSR containing:
-  \begin{enumerate}[topsep=0pt, itemsep=0pt,parsep=0pt,partopsep=0pt]
-    \item The signed \verb|TPM2B_Attest| structure
-    \item The IAK certificate
-  \end{enumerate}
+  \item The Owner builds the CSR% containing:
+  % \begin{enumerate}[topsep=0pt, itemsep=0pt,parsep=0pt,partopsep=0pt]
+  %   \item The signed \verb|TPM2B_Attest| structure
+  %   \item The IAK certificate
+  % \end{enumerate}
   \item The Owner takes a signature hash of the CSR
   \item The Owner signs the resulting hash digest with the LAK
   \item The Owner sends the CSR paired with the signed hash to the CA
-  \item The CA verifies the recieved data by checking:
-  \begin{enumerate}[topsep=0pt, itemsep=0pt,parsep=0pt,partopsep=0pt]
-    \item The hash digest against the CSR
-    \item The signature on the hash digest with the public LAK
-    \item The signature on the \verb|TPM2B_Attest| structure with the public IAK
-    \item The signature on the IAK certificate with the public key of the OEM's CA
-    \item The attributes of the LAK
-  \end{enumerate}
+  \item The CA verifies the recieved data% by checking:
+  % \begin{enumerate}[topsep=0pt, itemsep=0pt,parsep=0pt,partopsep=0pt]
+  %   \item The hash digest against the CSR
+  %   \item The signature on the hash digest with the public LAK
+  %   \item The signature on the \verb|TPM2B_Attest| structure with the public IAK
+  %   \item The signature on the IAK certificate with the public key of the OEM's CA
+  %   \item The attributes of the LAK
+  % \end{enumerate}
   \item If all of the checks succeed, the CA issues the LAK certificate to the Owner
   \end{enumerate}
   \caption{LAK Certificate Creation}
@@ -708,28 +706,9 @@ TPM2_Certify pubLAK privIAK
         (TCG_CSR_LDevID
           (signature (TPM2B_Attest pubLAK) privIAK) certIAK)) privLAK)
 ;; Done. 
-
-Definition steps_CA (msg : message) (iak lak : pubKey) (cert : signedCert) : Prop :=
-  match msg with
-  | (pair (TCG_CSR_LDevID (signature (TPM2B_Attest k) k0') (Cert k0 id k_ca'))
-          (signature m k')) =>
-        iak = k0 /\ lak = k /\ cert = (Cert k0 id k_ca') /\
-        seq_execute (iniTPM_CA, inferFrom msg ++ ini_CA)
-                     CheckHash 
-                        m
-                       (TCG_CSR_LDevID (signature (TPM2B_Attest k) k0')
-                                       (Cert k0 id k_ca'))
-                     ;; CheckSig (signature m k') k
-                     ;; CheckSig (signature (TPM2B_Attest k) k0') k0
-                     ;; CheckCert (Cert k0 id k_ca') pubOEM
-                     ;; CheckAttributes k Restricting Signing NonDecrypting Fixing
-                     ;; Done)
-                    (iniTPM_CA, inferFrom msg ++ ini_CA)
-  | _ => False
-  end.
 \end{lstlisting}
-\caption{Model of LAK Provisioning Procedure}
-\label{fig:lak_model}
+\caption{Owner's LAK Provisioning Protocol}
+\label{fig:lak_model_Owner}
 \end{figure}
 
 We construct an object of \verb|sequence| type for the Owner and an
@@ -753,6 +732,29 @@ CA issues the LAK certificate to the Owner.  The model includes
 several additional parameters and criteria to serve as a method for
 referencing elements of the certification request within proof
 statements.
+
+\begin{figure}[hpbt]
+\begin{lstlisting}[language=Coq]
+Definition steps_CA (msg : message) (iak lak : pubKey) (cert : signedCert) : Prop :=
+  match msg with
+  | (pair (TCG_CSR_LDevID (signature (TPM2B_Attest k) k0') (Cert k0 id k_ca'))
+          (signature m k')) =>
+       iak = k0 /\ lak = k /\ cert = (Cert k0 id k_ca') /\
+       seq_execute (iniTPM_CA, inferFrom msg ++ ini_CA)
+         CheckHash m
+           (TCG_CSR_LDevID (signature (TPM2B_Attest k) k0') (Cert k0 id k_ca'))
+           ;; CheckSig (signature m k') k
+           ;; CheckSig (signature (TPM2B_Attest k) k0') k0
+           ;; CheckCert (Cert k0 id k_ca') pubOEM
+           ;; CheckAttributes k Restricting Signing NonDecrypting Fixing
+           ;; Done)
+           (iniTPM_CA, inferFrom msg ++ ini_CA)
+  | _ => False
+  end.
+\end{lstlisting}
+\caption{CA's LAK Provisioning Protocol}
+\label{fig:lak_model_CA}
+\end{figure}
 
 Assurance A is proved using only the CA's function. The
 \verb|CheckAttributes| command in the CA's function corresponds with
@@ -853,16 +855,16 @@ on the Owner's initial state pair are the main contributors to
 enforcement of this constraint. Due to the nature of command
 execution, the certification request and all of its contents must have
 be produced by a command or contained in the initial state.
-Therefore, the restrictions placed on the initial state allow only
-exactly those messages that are impossible to be generated by a
-command sequence.  The \verb|needsGeneratedTPM| function restricts the
-Owner's initial \verb|tpm_state| to the inclusion of previously
-created private keys. While the \verb|needsGenerated| function
-restricts the Owner's initial \verb|state| to the inclusion of public
-keys as well as previously issued certificates.  The subject of these
-certificates may be the Owner itself or any other entity.  These
-restrictions disallow other messages in the Owner state from being
-used to build the certification request.
+Therefore, restrictions placed on the initial state allow only those
+messages that cannot be generated by a command sequence.  The
+\verb|needsGeneratedTPM| function restricts the Owner's initial
+\verb|tpm_state| to include only previously created private keys while
+the \verb|needsGenerated| function restricts the Owner's initial
+\verb|state| to include public keys as well as previously issued
+certificates.  The subject of these certificates may be the Owner
+itself or any other entity.  These restrictions prevent other
+messages in the Owner state from being used to build the certification
+request.
 
 The next step is using this series of assumptions to learn more about
 the Owner. We cannot directly prove the new LAK is loaded on the same
@@ -872,8 +874,8 @@ command sequence the Owner executes. Specifically, the sequence
 define a cascading collection of recursive functions to determine
 whether a given sequence of commands is a supersequence of
 \verb|steps1to5_Owner|.  Using the current assumptions about Owner and
-the CA we prove that the Owner's unknown sequence \verb|s| satisfies
-this function. This proof relies on the particular structure of the
+the CA we prove the Owner's unknown sequence \verb|s| satisfies
+this property. The proof relies on the structure of the
 certification request as it is required by the CA's steps. In order to
 produce a message with this structure, specific commands must be
 executed in a specific order.  The overall proof hinges on this
@@ -883,30 +885,28 @@ The next step is demonstrating the Owner must have executed
 \verb|TPM2_Certify| on the public LAK and private IAK.  Recall our
 conclusion that the LAK and IAK must be loaded on the same TPM if the
 LAK is certified using the IAK. Using the previous conclusion it is
-trivial to prove that this command is contained within the Owner's
-sequence \verb|s|.  We use the function \verb|command_in_sequence| to
-describe this scenario because all of the command inputs must match
-exactly.  We prove one last set of intermediate lemmas that show that
-the LAK and IAK must be loaded on the same TPM for one to execute any
-sequence that contains this command.  The composition of these small
-proofs leads to our end goal shown in Figure \ref{fig:lak_goal}. Due
-to extra parameters and criteria of the \verb|steps_CA| function, the
-proof statement precisely states that the inverse of the key contained
-in the IAK certificate and the inverse of the key contained in the new
-certificate are loaded on the same TPM.  This is precisely the
-assertion described by Assurance B.  Therefore, we have now proven
+trivial to prove this command is contained within the Owner's sequence
+\verb|s|.  We use the function \verb|command_in_sequence| to describe
+this scenario.  We prove one last set of intermediate lemmas that show
+that the LAK and IAK must be loaded on the same TPM for one to execute
+any sequence that contains this command.  The composition of these
+small proofs leads to our end goal shown in Figure
+\ref{fig:lak_goal}. Due to extra parameters and criteria of the
+\verb|steps_CA| function, the proof statement states that the inverse
+of the key contained in the IAK certificate and the inverse of the key
+contained in the new certificate are loaded on the same TPM.  This is
+the assertion described by Assurance B.  Therefore, we have proven
 that Assurance B is in fact guaranteed by the protocol assuming only
 that the CA is trusted to execute its steps correctly.
 
-This procedure uses the previously provisioned IAK to prove that the
+This procedure uses the previously provisioned IAK to prove the
 new LAK is loaded on the same TPM and thus contained in the device
 identified by the IAK certificate. Therefore, when issuing the LAK
 certificate, the CA should use the same device identifying information
-as that from the IAK certificate's Subject field. To briefly summarize
-our results, Assurance A is guaranteed by the attribute check
-performed by the CA, and Assurance B is guaranteed by the IAK's
-\verb|Restricted| attribute and the signed \verb|TPM2B_Attest|
-structure.
+as that from the IAK certificate's Subject field. To summarize,
+Assurance A is guaranteed by the attribute check performed by the CA
+and Assurance B is guaranteed by the IAK's \verb|Restricted| attribute
+and the signed \verb|TPM2B_Attest| structure.
 
 \subsection{OEM Creation of IAK Certificate based on EK Certificate}
 
@@ -921,30 +921,31 @@ exactly with the Proof of Residency line A in Figure
 \begin{enumerate}[itemsep=0pt,parsep=0pt,partopsep=0pt]
   \setcounter{enumi}{-1}
   \item The OEM creates and loads the IAK
-  \item The OEM builds the CSR containing:
-  \begin{enumerate}[topsep=0pt, itemsep=0pt,parsep=0pt,partopsep=0pt]
-    \item Device identity information including the device model and serial
-    number
-    \item The EK certificate
-    \item The IAK public area
-  \end{enumerate}
+  \item The OEM builds the CSR% containing:
+  % \begin{enumerate}[topsep=0pt, itemsep=0pt,parsep=0pt,partopsep=0pt]
+  %   \item Device identity information including the device model and serial
+  %   number
+  %   \item The EK certificate
+  %   \item The IAK public area
+  % \end{enumerate}
   \item The OEM takes a signature hash of the CSR
   \item The OEM signs the resulting hash digest with the IAK
   \item The OEM sends the CSR paired with the signed hash to the CA
-  \item The CA verifies the received data by checking:
-  \begin{enumerate}[topsep=0pt, itemsep=0pt,parsep=0pt,partopsep=0pt]
-    \item The hash digest against the CSR
-    \item The signature on the hash digest with the IAK public key
-    \item The signature on the EK certificate with the public key of the TPM Manufacturer's CA
-    \item The attributes of the IAK
-  \end{enumerate}
-  \item If all of the checks succeed, the CA issues a challenge blob to the OEM by:
-  \begin{enumerate}[topsep=0pt, itemsep=0pt,parsep=0pt,partopsep=0pt]
-    \item Calculating the cryptographic name of the IAK
-    \item Generating a nonce
-    \item Building the encrypted credential structure
-  \end{enumerate}
-  \item The OEM releases the secret nonce by decrypting the challenge blob and verifying the name of the IAK
+  \item The CA verifies the received data% by checking:
+  % \begin{enumerate}[topsep=0pt, itemsep=0pt,parsep=0pt,partopsep=0pt]
+  %   \item The hash digest against the CSR
+  %   \item The signature on the hash digest with the IAK public key
+  %   \item The signature on the EK certificate with the public key of the TPM Manufacturer's CA
+  %   \item The attributes of the IAK
+  % \end{enumerate}
+  \item If all of the checks succeed, the CA issues a challenge blob to the OEM% by:
+  % \begin{enumerate}[topsep=0pt, itemsep=0pt,parsep=0pt,partopsep=0pt]
+  %   \item Calculating the cryptographic name of the IAK
+  %   \item Generating a nonce
+  %   \item Building the encrypted credential structure
+  % \end{enumerate}
+  \item The OEM releases the secret nonce by decrypting the challenge
+    blob and verifying the IAK name
   \item The CA checks the returned nonce against the one generated in Step 6b
   \item If the check succeeds, the CA issues the IAK certificate to the OEM
   \end{enumerate}
@@ -1074,20 +1075,19 @@ sequence \verb|s1| is needed.
 
 \begin{figure}[hptb]
 \begin{lstlisting}[language=Coq]
-  Theorem iak_and_ek_in_TPM :
-    forall s2 s1 iniTPM ini midTPM mid finTPM fin msg ident ek iak cert g,
-  seq_execute (iniTPM, ini) s1 (midTPM, mid) -> 
-  In msg mid ->
-  (forall m', needsGeneratedTPM m' -> ~ In m' iniTPM) ->
-  (forall m', needsGenerated m' -> ~ In m' ini) ->
-  steps_CA msg ident ek iak cert ->
-  seq_execute
-    (midTPM, inferFrom (encryptedCredential (hash (publicKey iak)) g ek)
-      ++ mid)
-    s2 
-    (finTPM, fin) ->
-  In (randomNum g) fin ->
-  In (privateKey (pubToPrivKey iak)) iniTPM
+Theorem iak_and_ek_in_TPM :
+  forall s2 s1 iniTPM ini midTPM mid finTPM fin msg ident ek iak cert g,
+seq_execute (iniTPM, ini) s1 (midTPM, mid) -> 
+In msg mid ->
+(forall m', needsGeneratedTPM m' -> ~ In m' iniTPM) ->
+(forall m', needsGenerated m' -> ~ In m' ini) ->
+steps_CA msg ident ek iak cert ->
+seq_execute
+  (midTPM, inferFrom (encryptedCredential (hash (publicKey iak)) g ek) ++ mid)
+  s2 
+  (finTPM, fin) ->
+In (randomNum g) fin ->
+In (privateKey (pubToPrivKey iak)) iniTPM
   /\ In (privateKey (pubToPrivKey ek)) iniTPM.
 \end{lstlisting}
 \caption{Final Verification Goal for IAK Provisioning Procedure}
