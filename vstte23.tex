@@ -56,7 +56,7 @@ Perry Alexander}
 \maketitle              % typeset the header of the contribution
 %
 \begin{abstract}
-  The provisioning of TPM-based secure device identifiers must be
+  Provisioning of TPM-based secure device identifiers must be
   verified to ensure such identifiers are strongly bound to their
   associated devices.  Appraising attestation results without such
   assurances calls into question the integrity of trust decisions.  We
@@ -244,7 +244,7 @@ certificate. Certificates are chained from a trusted root certificate
 to extend trust to new keys. To know when and by whom DevIDs are
 created, it is useful to examine the creation and distribution of
 TPM-containing devices resulting certificates and trust relationships
-shown in Figure~\ref{fig:certificate-model}:
+shown in Figure~\ref{fig:cert_rel}:
 
 
 
@@ -284,8 +284,7 @@ shown in Figure~\ref{fig:certificate-model}:
     TPM as the IAK.
   \item \textsf{CA Signing}: The IAK certificate and IDevID
     certificate are signed by the OEM's CA binding the IAK and IDevID
-    to this specific device.  The resulting certificate chain is
-    EK$\rightarrow$IAK$\rightarrow$IDevID.
+    to this specific device.
   \end{itemize}
 \item \textsf{Owner}: Owners may optionally provision their TPMs with
   one or more LDevID certificates that bind LDevID keys to their
@@ -299,8 +298,7 @@ shown in Figure~\ref{fig:certificate-model}:
     TPM as the LAK.
   \item \textsf{CA Signing}: The LAK certificate and LDevID
     certificate are signed by the Owner's CA binding the LAK and
-    LDevID to this specific device.  The resulting certificate chain
-    is EK$\rightarrow$IAK$\rightarrow$LAK$\rightarrow$LDevID
+    LDevID to this specific device.
   \end{itemize}
 \end{itemize}
 
@@ -391,9 +389,9 @@ messages. For example, given a message in the form
 \verb|signature m k|, the message \verb|m| may be deduced. Whereas
 given a message in the form \verb|encryptedCredential n g k|, no
 messages may be deduced. Message inference is modeled in two
-equivalent ways: (i) as a recursive function \verb|inferFrom|; and
-(ii) as an inductive proposition \verb|inferrable|.  Additional
-messages may be inferred from signatures, \verb|TPM2B_Attest|
+equivalent ways: (i) a recursive function \verb|inferFrom|; and
+(ii) an inductive proposition \verb|inferrable|.  Additional
+messages may be derived from signatures, \verb|TPM2B_Attest|
 structures, certificate signing requests (CSRs), certificates, and
 pairs of messages. All other messages either contain no additional
 information or the information is concealed.
@@ -600,29 +598,23 @@ specific TPM and device, the CA should follow certain provisioning
 procedures. The TCG describes several such procedures in
 \citet{DevIDSpec-TCG}.  We consider two procedures in detail: OEM
 creation of an IAK certificate based on an EK certificate and Owner
-creation of an LAK certificate based on an IAK certificate. These
-protocols bear the most significance in enrollment of additional
-DevIDs. For each protocol, the specification outlines steps for the CA
-and the certificate-requesting entity.  Furthermore, the
-specification claims that each protocol provides certain
-assurances. Each assurance manifests as an assertion regarding either
-TPM-residency, key attributes, or previously-issued certificates and
-provides the basis for the resulting cryptographic evidentiary chain
-formed by a chain of certificates. Therefore, it is important to
-verify that each protocol guarantees its associated assurances.
+creation of an LAK certificate based on an IAK certificate.  For each
+protocol, the specification outlines steps for the CA and the
+certificate-requesting entity.  The specification claims that each
+protocol provides certain assurances.  Each assurance manifests as an
+assertion regarding either TPM-residency, key attributes, or
+previously-issued certificates and provides the basis for the
+resulting cryptographic evidentiary chain formed by a chain of
+certificates. Therefore, it is important to verify that each protocol
+guarantees its associated assurances.
 
-Our model uses Coq's \verb|Module Type| mechanism to parameterize
-protocol details and specify necessary properties considering those
-parameters.  When instantiating a \verb|Module Type|, one must provide
-concrete values for all parameters and prove all properties.  In
-conducting these verification goals, we consider two scenarios: (i)
-the certificate-requesting entity and the CA are both trusted to
-execute their steps correctly; and (ii) only the CA is trusted to
-execute its steps correctly. The specification does not state which of
-these assumptions they reason under.  Because trust for creation of a
-new certificate is based on an existing certificate, these scenarios
-include the presupposition that previously-issued certificates imply
-the associated assurances of their provisioning protocols.
+When verifying these goals, we consider two scenarios: (i) the
+certificate-requesting entity and the CA are both trusted to execute
+their steps correctly; and (ii) only the CA is trusted to execute its
+steps correctly.  Because trust for creation of a new certificate is
+rooted in an existing certificate, these scenarios include the
+presupposition that previously-issued certificates imply the assurance
+from their provisioning protocols.
 
 \subsection{Owner Creation of LAK Certificate based on IAK Certificate}
 
@@ -703,49 +695,36 @@ construction defined previously.
 \begin{figure}[hpbt]
 \begin{lstlisting}[language=Coq]
 Definition steps1to5_Owner : sequence :=
-TPM2_Certify 
-   pubLAK 
-   privIAK ;;
-MakeCSR_LDevID 
-  (signature (TPM2B_Attest pubLAK) privIAK) 
-   certIAK ;;
-TPM2_Hash 
-  (TCG_CSR_LDevID (signature (TPM2B_Attest pubLAK) privIAK) certIAK) ;;
-TPM2_Sign 
-  (hash (TCG_CSR_LDevID (signature (TPM2B_Attest pubLAK) privIAK) certIAK)) 
-   privLAK ;;
-MakePair 
-  (TCG_CSR_LDevID (signature (TPM2B_Attest pubLAK) privIAK) certIAK) 
-  (signature
-    (hash
-      (TCG_CSR_LDevID
-        (signature (TPM2B_Attest pubLAK) privIAK) certIAK)) privLAK) ;;
-Done. 
+TPM2_Certify pubLAK privIAK
+;; MakeCSR_LDevID (signature (TPM2B_Attest pubLAK) privIAK) certIAK
+;; TPM2_Hash (TCG_CSR_LDevID (signature (TPM2B_Attest pubLAK) privIAK) certIAK)
+;; TPM2_Sign 
+    (hash (TCG_CSR_LDevID (signature (TPM2B_Attest pubLAK) privIAK) certIAK))
+    privLAK
+;; MakePair 
+    (TCG_CSR_LDevID (signature (TPM2B_Attest pubLAK) privIAK) certIAK) 
+    (signature
+      (hash
+        (TCG_CSR_LDevID
+          (signature (TPM2B_Attest pubLAK) privIAK) certIAK)) privLAK)
+;; Done. 
 
 Definition steps_CA (msg : message) (iak lak : pubKey) (cert : signedCert) : Prop :=
   match msg with
   | (pair (TCG_CSR_LDevID (signature (TPM2B_Attest k) k0') (Cert k0 id k_ca'))
           (signature m k')) =>
         iak = k0 /\ lak = k /\ cert = (Cert k0 id k_ca') /\
-        seq_execute   (iniTPM_CA, inferFrom msg ++ ini_CA)
-                      (CheckHash 
-                          m
-                         (TCG_CSR_LDevID (signature (TPM2B_Attest k) k0')
-                                         (Cert k0 id k_ca')) ;;
-                       CheckSig
-                         (signature m k') 
-                          k ;;
-                       CheckSig 
-                         (signature (TPM2B_Attest k) k0') 
-                          k0 ;;
-                       CheckCert 
-                         (Cert k0 id k_ca') 
-                          pubOEM ;;
-                       CheckAttributes 
-                          k 
-                          Restricting Signing NonDecrypting Fixing ;;
-                       Done)
-                      (iniTPM_CA, inferFrom msg ++ ini_CA)
+        seq_execute (iniTPM_CA, inferFrom msg ++ ini_CA)
+                     CheckHash 
+                        m
+                       (TCG_CSR_LDevID (signature (TPM2B_Attest k) k0')
+                                       (Cert k0 id k_ca'))
+                     ;; CheckSig (signature m k') k
+                     ;; CheckSig (signature (TPM2B_Attest k) k0') k0
+                     ;; CheckCert (Cert k0 id k_ca') pubOEM
+                     ;; CheckAttributes k Restricting Signing NonDecrypting Fixing
+                     ;; Done)
+                    (iniTPM_CA, inferFrom msg ++ ini_CA)
   | _ => False
   end.
 \end{lstlisting}
@@ -753,7 +732,16 @@ Definition steps_CA (msg : message) (iak lak : pubKey) (cert : signedCert) : Pro
 \label{fig:lak_model}
 \end{figure}
 
-We construct an object of \verb|sequence| type for the Owner and an object of function type for the CA. Constructing the Owner's steps is straightforward. Since this model disallows the arbitrary creation of keys, Step 0 is assumed to have been performed prior; the results of Step 0 are in fact already encapsulated in the \verb|pubLAK| parameter and \verb|privLAK| variable. Then each remaining step of the Owner corresponds with exactly one command in the model, namely \verb|TPM2_Certify| for Step 1, \verb|MakeCSR_LDevID| for Step 2, \verb|TPM2_Hash| for Step 3, \verb|TPM2_Sign| for Step 4, and \verb|MakePair| for Step 5. 
+We construct an object of \verb|sequence| type for the Owner and an
+object of function type for the CA. Constructing the Owner's steps is
+straightforward. Since this model disallows the arbitrary creation of
+keys, Step 0 is assumed to have been performed prior; the results of
+Step 0 are in fact already encapsulated in the \verb|pubLAK| parameter
+and \verb|privLAK| variable. Then each remaining step of the Owner
+corresponds with exactly one command in the model, namely
+\verb|TPM2_Certify| for Step 1, \verb|MakeCSR_LDevID| for Step 2,
+\verb|TPM2_Hash| for Step 3, \verb|TPM2_Sign| for Step 4, and
+\verb|MakePair| for Step 5. 
 
 Constructing the CA's steps is more complex as it relies on the
 certification request produced by the Owner's steps. First, the CA
@@ -766,7 +754,7 @@ several additional parameters and criteria to serve as a method for
 referencing elements of the certification request within proof
 statements.
 
-Using only the CA's function we can prove Assurance A. The
+Assurance A is proved using only the CA's function. The
 \verb|CheckAttributes| command in the CA's function corresponds with
 Step 6e of the provisioning procedure.  Note that the CA's function
 binds the LAK to the variable \verb|k|. It follows that successful
@@ -802,17 +790,14 @@ issues the LAK certificate.
 
 \begin{figure}[hbtp]
 \begin{lstlisting}[language=Coq]
-Definition iniTPM_Owner : tpm_state :=
-[ privateKey privLAK ;
-  privateKey privIAK ].
+  Definition iniTPM_Owner : tpm_state := [ privateKey privLAK
+                                         ; privateKey privIAK ].
 
-Definition ini_Owner : state :=
-[ signedCertificate certIAK ].
+Definition ini_Owner : state := [ signedCertificate certIAK ].
 
 Lemma ini_Owner_lowerBound : forall iniTPM ini fin,
   seq_execute (iniTPM, ini) steps1to5_Owner fin ->
-  (iniTPM_Owner \subsetOf iniTPM) /\
-  (ini_Owner \subsetOf ini).
+  (iniTPM_Owner \subsetOf iniTPM) /\ (ini_Owner \subsetOf ini).
 
 Lemma ini_Owner_sufficient : forall msg,
   attestationKey pubIAK ->
@@ -852,7 +837,8 @@ Theorem lak_and_iak_in_TPM : forall s iniTPM ini finTPM fin msg iak lak cert,
   (forall m', needsGeneratedTPM m' -> ~ In m' iniTPM) ->
   (forall m', needsGenerated m' -> ~ In m' ini) ->
   steps_CA msg iak lak cert ->
-  In (privateKey (pubToPrivKey lak)) iniTPM /\ In (privateKey (pubToPrivKey iak)) iniTPM
+  In (privateKey (pubToPrivKey lak)) iniTPM
+  /\ In (privateKey (pubToPrivKey iak)) iniTPM
 \end{lstlisting}
 \caption{Next Verification Goal for LAK Provisioning Procedure}
 \label{fig:lak_goal}
@@ -860,7 +846,7 @@ Theorem lak_and_iak_in_TPM : forall s iniTPM ini finTPM fin msg iak lak cert,
 
 These assumptions are reasonable and do not corrupt the conditions
 regarding the Owner's trustworthiness. The LAK, IAK, and IAK
-certificate are universally quantified making no reference to the
+certificates are universally quantified making no reference to the
 Owner. The assumptions aim only to constrain the certification
 request, \verb|msg|, and its contents to the Owner.  The restrictions
 on the Owner's initial state pair are the main contributors to
@@ -1088,17 +1074,21 @@ sequence \verb|s1| is needed.
 
 \begin{figure}[hptb]
 \begin{lstlisting}[language=Coq]
-Theorem iak_and_ek_in_TPM : forall s2 s1 iniTPM ini midTPM mid finTPM fin msg ident ek iak cert g,
-  seq_execute   (iniTPM, ini) s1 (midTPM, mid) -> 
+  Theorem iak_and_ek_in_TPM :
+    forall s2 s1 iniTPM ini midTPM mid finTPM fin msg ident ek iak cert g,
+  seq_execute (iniTPM, ini) s1 (midTPM, mid) -> 
   In msg mid ->
   (forall m', needsGeneratedTPM m' -> ~ In m' iniTPM) ->
   (forall m', needsGenerated m' -> ~ In m' ini) ->
   steps_CA msg ident ek iak cert ->
-  seq_execute   (midTPM, inferFrom (encryptedCredential (hash (publicKey iak)) g ek) ++ mid) 
-                 s2 
-                (finTPM, fin) ->
+  seq_execute
+    (midTPM, inferFrom (encryptedCredential (hash (publicKey iak)) g ek)
+      ++ mid)
+    s2 
+    (finTPM, fin) ->
   In (randomNum g) fin ->
-  In (privateKey (pubToPrivKey iak)) iniTPM /\ In (privateKey (pubToPrivKey ek)) iniTPM.
+  In (privateKey (pubToPrivKey iak)) iniTPM
+  /\ In (privateKey (pubToPrivKey ek)) iniTPM.
 \end{lstlisting}
 \caption{Final Verification Goal for IAK Provisioning Procedure}
 \label{fig:iak_goal}
