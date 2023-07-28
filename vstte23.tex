@@ -97,7 +97,7 @@ Trusted Platform Module (TPM) as secure device identifiers
 \citep{DevIDSpec-TCG}. A secure device identifier (DevID) is defined
 as an identifier that is cryptographically bound to a device by a
 trusted party~\citep{DevIDSpec-IEEE}.  As a secure Root of Trust for
-Storage and Reporting~\citep{TPMSpec}, a TPM provides the necessary
+Storage and Reporting, a TPM provides the necessary
 protections for generating and storing DevIDs with suitable integrity
 guarantees.
 
@@ -177,7 +177,7 @@ stateful applied pi calculus, amongst others.
 %
 \section{Background}
 \subsection{TPM 2.0}
-A Trusted Platform Module (TPM) is a microcontroller that complies
+The Trusted Platform Module (TPM) is a microcontroller that complies
 with the ISO/IEC 11889:2015 international standard.  The TPM and its
 specification were designed by the Trusted Computing Group (TCG) to
 act as a hardware root-of-trust for PC system security. To this end,
@@ -186,17 +186,17 @@ agility, secure storage of keys, enhanced authorization, measurement
 storage and reporting, device identification, and NVRAM
 storage~\citep{{PracticalGuide}}.
 
-Attestation is high-integrity reporting of system measurements stored
-in platform configuration registers (PCRs).  PCRs store a composite of
-a measurement chain in a way that guarantees integrity. Rather than
-being set like a traditional register, a PCR is extended by
-concatenating a new hash to the current PCR value, hashing and storing
-the result.  Thus, a PCR captures both measurement value and order
-over an arbitrarily long measurement sequence.  An attestation is a
-PCR composite signed to guarantee integrity and authenticity.  To tie
-attestation data to a specific device, the signing key must be
-cryptographically bound to that device making the key a secure device
-identifier.
+TPM-based attestation is high-integrity reporting of system
+measurements stored in platform configuration registers (PCRs).  PCRs
+store a composite of a measurement chain in a way that guarantees
+integrity. Rather than being set like a traditional register, a PCR is
+extended by concatenating a new hash to the current PCR value, hashing
+and storing the result.  Thus, a PCR captures both measurement value
+and order over an arbitrarily long measurement sequence.  An
+attestation is a PCR composite signed to guarantee integrity and
+authenticity.  To tie attestation data to a specific device, the
+signing key must be cryptographically bound to that device making the
+key a secure device identifier.
 
 A TPM key is an asymmetric key that can only be used by the creating
 TPM.  Primary TPM keys created with \verb|TPM2_CreatePrimary| are
@@ -233,18 +233,13 @@ the same TPM.
 % DevID certificates.
 
 \subsection{Secure Device Identifier}
-A secure device identifier (DevID) is an identifier that is
-cryptographically bound to a device \citep{DevIDSpec-IEEE}. A DevID
-must not be transferable from one device to another and must be stored
-in a way that protects it from modification. The binding of TPM keys
-to their associated TPM makes them an ideal choice for DevIDs.
-
-Binding a TPM key to a specific device instance is captured by a DevID
-certificate. Certificates are chained from a trusted root certificate
-to extend trust to new keys. To know when and by whom DevIDs are
-created, it is useful to examine the creation and distribution of
-TPM-containing devices resulting certificates and trust relationships
-shown in Figure~\ref{fig:cert_rel}:
+A secure device identifier (DevID) is a TPM key that is
+cryptographically bound to a device creating a
+DevID certificate. Certificates are chained from a trusted root
+certificate to extend trust to new keys. Certificate Authorities (CAs)
+associated with the TPM manufacturer, OEMs, and device owners interact
+with the TPM to create an initial DevID permanently bound to the
+device and collections of local DevIDs that serve as device aliases:
 
 % \begin{enumerate}
 % \item\label{ite:idTPM} Manufacturers produce TPMs provisioned with an
@@ -301,6 +296,9 @@ shown in Figure~\ref{fig:cert_rel}:
   \end{itemize}
 \end{itemize}
 
+\noindent The resulting TPM configuration is shown in
+Figure~\ref{fig:cert_rel}
+
 \begin{figure}[htbp]
   \begin{centering}
   \includegraphics[width=\linewidth]{figures/certRelationships.png}
@@ -351,13 +349,13 @@ describing whether a particular attribute is set or not set. A key
 pair consists of a \verb|pubKey| and a \verb|privKey| with the same
 identifier and attributes.
 
-\begin{lstlisting}[language=Coq]
-Inductive pubKey : Type :=
-| Public : keyIdType -> Restricted -> Sign -> Decrypt -> FixedTPM -> pubKey.
+% \begin{lstlisting}[language=Coq]
+% Inductive pubKey : Type :=
+% | Public : keyIdType -> Restricted -> Sign -> Decrypt -> FixedTPM -> pubKey.
 
-Inductive privKey : Type :=
-| Private : keyIdType -> Restricted -> Sign -> Decrypt -> FixedTPM -> privKey.
-\end{lstlisting}
+% Inductive privKey : Type :=
+% | Private : keyIdType -> Restricted -> Sign -> Decrypt -> FixedTPM -> privKey.
+% \end{lstlisting}
 
 Certificates are defined by the inductive type \verb|signedCert|
 consisting of a public key, an identifier, and a private key. The
@@ -366,14 +364,14 @@ information describing either the TPM or the device. The private key
 parameter denotes the key that performed the signature over the
 certificate.
 
-\begin{lstlisting}[language=Coq]
-Inductive identifier : Type :=
-| TPM_info : tpmInfoType -> identifier
-| Device_info : deviceInfoType -> identifier.
+% \begin{lstlisting}[language=Coq]
+% Inductive identifier : Type :=
+% | TPM_info : tpmInfoType -> identifier
+% | Device_info : deviceInfoType -> identifier.
 
-Inductive signedCert : Type :=
-| Cert : pubKey -> identifier -> privKey -> signedCert.
-\end{lstlisting}
+% Inductive signedCert : Type :=
+% | Cert : pubKey -> identifier -> privKey -> signedCert.
+% \end{lstlisting}
 
 \subsection{Commands}
 
@@ -1131,7 +1129,7 @@ certificate and the inverse of the key contained in the new
 certificate are loaded on the same TPM. This is precisely the
 assertion described by Assurance B.
 
-In conclusion, we us the previously-certified EK to prove that the new
+In conclusion, we use the previously-certified EK to prove that the new
 IAK is loaded on the same TPM as itself. When issuing the IAK
 certificate, the CA uses the device identifying information from the
 recieved CSR.  Assurance A is guaranteed by the attribute check
@@ -1140,39 +1138,38 @@ performed by the CA, Assurance B is guaranteed by the EK's
 blob, and Assurance C is guaranteed by the signature check on the EK
 certificate performed by the CA.
 
-Our analysis has revealed a potential shortcoming in the IAK
-provisioning procedure. The procedure provides no assurance regarding
-IAK device-residency.  The IAK certificate is intended to provide
-evidence that a key belongs to a specific device, yet the procedure
-makes no guarantees that the IAK is actually on the device.  Proving
-an IAK belongs to a specific device requires first binding the IAK to
-a specific TPM using the EK and then binding the TPM to a specific
+Our analysis has revealed a potential weakness in the IAK provisioning
+procedure. The procedure provides no assurance regarding IAK
+device-residency.  The IAK certificate is intended to provide evidence
+that a key belongs to a specific device, yet the procedure makes no
+guarantees that the IAK is actually on the device.  Proving an IAK
+belongs to a specific device requires first binding the IAK to a
+specific TPM using the EK and then binding the TPM to a specific
 device \citep{DevIDSpec-TCG}.  However, the CA makes no attempt at
 performing the second part of this process. Instead the CA fully
 trusts the OEM to have provided the correct device identifying
 information.
 
-Even the attestation variation of the IAK provisioning procedure does
-not attempt verification. This variation uses a quote over selected
-PCRs to show only that the device is running the appropriate, trusted
-firmware. All devices with the same model number have an identical
-golden hash value that represents its expected PCR digest.  Although
-this check guarantees that the TPM containing the IAK is on a specific
-\textit{type} of device it does not guarantee that the TPM is on a
-specific device.
+% Even the attestation variation of the IAK provisioning procedure does
+% not attempt verification. This variation uses a quote over selected
+% PCRs to show only that the device is running the appropriate, trusted
+% firmware. All devices with the same model number have an identical
+% golden hash value that represents its expected PCR digest.  Although
+% this check guarantees that the TPM containing the IAK is on a specific
+% \textit{type} of device it does not guarantee that the TPM is on a
+% specific device.
 
 A small change to the attestation variation of the IAK provisioning
-procedure can overcome this shortcoming. The TPM should take a
-measurement that contains the device's serial number. In this way,
-each individual device has a unique golden hash value, and thus its
-identity can be uniquely determined.  Due to the measurement integrity
-guaranteed by the TPM's PCR mechanism, this modification provides
-definitive evidence that a key belongs to a specific device, the exact
-result which an IAK certificate is intended to have. A downfall of
-this solution is that it requires a large database of golden hash
-values. Therefore, it may be unrealistic and even unnecessary to
-implement this change in circumstances where a precise device identity
-is not required.%  However, this solution may still be useful in
+procedure will overcome this shortcoming. The TPM should take a
+measurement that contains a device's unique identifier. In this way,
+each individual device has a unique golden hash value and its identity
+can be uniquely determined.  Due to measurement integrity guaranteed
+by the TPM's PCR mechanism, this modification provides definitive
+evidence that a key belongs to a specific device. A downfall of this
+solution is that it requires a large database of golden hash
+values. % Therefore, it may prove unrealistic to implement this change
+% in circumstances where a precise device identity is not
+% required. However, this solution may still be useful in
 % critical systems where it is imperative to know the identity of a
 % specific device.
 %
@@ -1188,9 +1185,7 @@ TCG-provided key certification protocols, and (iv) the discovery of a
 potential shortcoming ing the IAK provisioning procedure and a
 recommendation for its improvement.
 
-Although the modeled command library and execution environment are
-useful in verifying properties over key certification protocols,
-further improvements are necessary to extend applicability to a
+Further improvements are necessary to extend applicability to a
 broader range of problems. An initial step is expanding the command
 library to include the TPM commands necessary for modeling the
 attestation variation of these provisioning protocols. The
@@ -1202,90 +1197,6 @@ necessary PCR--related commands, the structure of abstract state
 should be modified from a pair to a record similar to that of the work
 of \citet{PrivacyCAAnalysis-Hall}.
 
-Beyond adding PCR-related commands, it is useful to include more TPM
-and TSS commands in general. By expanding the command subset
-supported by this model, we can describe a broader range of situations
-beyond DevID provisioning protocols.  Besides expanding the modeled
-TPM command library, we may also improve on the execution
-environment. Specifically, more complex control sequences such as
-branching and looping should be included so that we can describe more
-elaborate scenarios.
-%
-%
-%
-\begin{comment}
-\section{First Section}
-\subsection{A Subsection Sample}
-Please note that the first paragraph of a section or subsection is
-not indented. The first paragraph that follows a table, figure,
-equation etc. does not need an indent, either.
-
-Subsequent paragraphs, however, are indented.
-
-\subsubsection{Sample Heading (Third Level)} Only two levels of
-headings should be numbered. Lower level headings remain unnumbered;
-they are formatted as run-in headings.
-
-\paragraph{Sample Heading (Fourth Level)}
-The contribution should contain no more than four levels of
-headings. Table~\ref{tab1} gives a summary of all heading levels.
-
-\begin{table}
-\caption{Table captions should be placed above the
-tables.}\label{tab1}
-\begin{tabular}{|l|l|l|}
-\hline
-Heading level &  Example & Font size and style\\
-\hline
-Title (centered) &  {\Large\bfseries Lecture Notes} & 14 point, bold\\
-1st-level heading &  {\large\bfseries 1 Introduction} & 12 point, bold\\
-2nd-level heading & {\bfseries 2.1 Printing Area} & 10 point, bold\\
-3rd-level heading & {\bfseries Run-in Heading in Bold.} Text follows & 10 point, bold\\
-4th-level heading & {\itshape Lowest Level Heading.} Text follows & 10 point, italic\\
-\hline
-\end{tabular}
-\end{table}
-
-
-\noindent Displayed equations are centered and set on a separate
-line.
-\begin{equation}
-x + y = z
-\end{equation}
-% Please try to avoid rasterized images for line-art diagrams and
-% schemas. Whenever possible, use vector graphics instead (see
-% Fig.~\ref{fig1}).
-
-% \begin{figure}
-% \includegraphics[width=\textwidth]{fig1.eps}
-% \caption{A figure caption is always placed below the illustration.
-% Please note that short captions are centered, while long ones are
-% justified by the macro package automatically.} \label{fig1}
-% \end{figure}
-
-\begin{theorem}
-This is a sample theorem. The run-in heading is set in bold, while
-the following text appears in italics. Definitions, lemmas,
-propositions, and corollaries are styled the same way.
-\end{theorem}
-%
-% the environments 'definition', 'lemma', 'proposition', 'corollary',
-% 'remark', and 'example' are defined in the LLNCS documentclass as well.
-%
-\begin{proof}
-Proofs, examples, and remarks have the initial word in italics,
-while the following text appears in normal font.
-\end{proof}
-
-We can use \verb+citep+ for authors names like~\citep{Petz:2019aa} or
-\verb+citet+ for the traditional numerical
-citation~\citet{Ramsdell:2019aa}.
-
-When submitting papers that must conform to LNCS standards just use
-\verb+cite+ for citations like~\citep{Petz:2019aa} and comment out the
-\verb+natbib+ include above and swap \verb+bibliographystyle+ commands
-below.
-\end{comment}
 % 
 % 
 % ---- Bibliography ----
