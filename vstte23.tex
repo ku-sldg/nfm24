@@ -7,8 +7,8 @@
 \usepackage{graphicx}
 % Used for displaying a sample figure. If possible, figure files should
 % be included in EPS format.
-%\usepackage{tikz}
-%\usetikzlibrary{arrows}
+\usepackage{tikz}
+\usetikzlibrary{arrows}
 \usepackage{verbatim}
 %\usepackage{amsmath}
 %\usepackage{amssymb}
@@ -299,13 +299,23 @@ device and collections of local DevIDs that serve as device aliases:
 \noindent The resulting TPM configuration is shown in
 Figure~\ref{fig:cert_rel}
 
-\begin{figure}[htbp]
-  \begin{centering}
-  \includegraphics[width=\linewidth]{figures/certRelationships.png}
-  \par\end{centering}
-  \caption{Key and Certificate Relationships \citep{DevIDSpec-TCG}}
-  \label{fig:cert_rel}
+\begin{figure}[hbtp]
+  \centering
+  \input{key-cert-rel}
+  \caption{Keys and certificates created by CA provisioning. Labeled
+    black arrows are trust relationships formed by key creation.  Red
+    arrows denote key inclusion in certificates. Certificates are
+    labeled with their associated CS~\citep{DevIDSpec-TCG}.}
+  \label{fig:cert-rel}
 \end{figure}
+
+% \begin{figure}[htbp]
+%   \begin{centering}
+%   \includegraphics[width=\linewidth]{figures/certRelationships.png}
+%   \par\end{centering}
+%   \caption{Key and Certificate Relationships \citep{DevIDSpec-TCG}}
+%   \label{fig:cert_rel}
+% \end{figure}
 
 Trust for new DevID certificate creation is inherited from an existing
 trusted certificate forming a chain-of-trust from a DevID back to a
@@ -325,7 +335,7 @@ short-lived in that they can be created and removed at will by the
 system owner.
 
 In a properly configured TPM, a CA signed EK identifies it as a
-legitimate trust root for its TPM.  An EK signed IAK binds the TMP to
+legitimate trust root for its TPM.  An EK signed IAK binds the TPM to
 the device where it is installed.  An IAK signed LIK binds an alias
 key bound to the same device as the IAK.  IDevIDs identify the device
 while LDevIDs are equally strong aliases for their associated device.
@@ -1008,7 +1018,7 @@ also quite similar. The command
 corresponds with Step 5 of the provisioning procedure. The CA's
 function binds the EK to the variable \verb|k0| and the EK certificate
 to the message \verb|Cert k0 id0 k_ca'|.  Successful execution of this
-command directly implies that the EK certificate is valid.
+command directly implies that EK certificate is valid.
 
 %% Figure is not referenced in the paper, thus pulling it to get back
 %% a page
