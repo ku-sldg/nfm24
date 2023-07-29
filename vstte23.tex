@@ -321,37 +321,31 @@ Figure~\ref{fig:cert_rel}.
 %   \label{fig:cert_rel}
 % \end{figure}
 
-Trust for new DevIDs certificates is inherited from an existing
-certificates forming a chain-of-trust from the new DevID back to a
-trust anchor~\citep{DevIDSpec-TCG}. Initial AK (IAK) certificates
-identify devices and are tied to the EK, providing definitive evidence
-that the IAK key belongs to a specific device. The IAK certificate
-acts as a trust anchor for the device and is the root node in any
-chain of LAK certificates associated with the device.  The IAK and
-IDevID are created by the OEM and are maintained for the device's
-lifetime.
+Trust for new DevIDs and DevID certificates is inherited from an
+existing TPM keys forming a chain-of-trust from the new DevID back to
+a trust anchor~\citep{DevIDSpec-TCG}. The EK identifies the TPM and
+serves as the root-of-trust.  A single Initial AK (IAK) is created
+from the EK and the OEM CA creates certificate for the IAK.  The IAK
+certificate acts as a trust anchor for the device and is the root node
+in any chain of LAK certificates on the device.  A single Initial
+DevID (IDevID) key is created from the IAK and the OEM CA creates the
+IDevID Certificate that serves as an identifier for lifetime of the
+device.
 
-Local AK (LAK) certificates are chained from an IAK certificate
-providing evidence that an LAK belongs to the same device as tie IAK.
-LAK certificates and LDevIDs are created by users and serve as aliases
-for the device.  A single device may have many identifying LAK
-certificates and LDevIDs.  LAK certificates and LDevIDs are
-short-lived and may be created, chained and removed at will by the
-system owner.
-
-In a properly configured TPM, a CA signed EK identifies it as a
-legitimate trust root for its TPM.  An EK signed IAK binds the TPM to
-the device where it is installed.  An IAK signed LAK binds an alias
-key to the same device as the IAK.  IDevIDs identify the device while
-LDevIDs are equally strong aliases for the same device.  
+Local AKs (LAKs) and LAK certificates are created from the device IAK
+or another LAK providing evidence that an LAK belongs to the same
+device.  Local DevIDs (LDevIDs) are created by users and LDevID
+certificates by the device owner's CA. LDevID certificates serve as
+aliases for the device and are the only DevIDs shared.  A single
+device may have many identifying LAKs and LDevID certificates, but
+trust for each is rooted in the IAK and transitively the EK.
 
 \section{Protocol Execution}
 
-The correctness of protocols used for generating DevID certificates
-and transitively their properties is the subject of this work.  To
-achieve this end, we define an execution model that specifies a
-labeled transition system for TPM command execution over keys and
-certificates.
+The correctness of protocols used by CAs for generating DevID
+certificates and transitively their properties is the subject of this
+work.  We use a labeled transition system to model TPM command
+execution over keys and certificates.
 
 \subsection{Keys and Certificates}
 
