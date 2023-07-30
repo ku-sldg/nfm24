@@ -342,10 +342,18 @@ trust for each is rooted in the IAK and transitively the EK.
 
 \section{Protocol Execution}
 
-The correctness of protocols used by CAs for generating DevID
-certificates and transitively their properties is the subject of this
-work.  We use a labeled transition system to model TPM command
-execution over keys and certificates.
+Certificate authority protocols for generating DevID certificates are
+correct if the creation of a good certificate ensures TPM residency of
+keys necessary to create the certificate.  The CA's signature on the
+DevID should make this guarantee.
+
+We use a labeled transition system to model TPM command execution over
+sets of keys and certificates.  CA protocols are modeled as sequences
+of TPM instructions executed by the CA and by the OEM for the IDevID
+and Owner for the LDevID respectively. A minimum initial state for
+successful protocol execution is defined and we establish that keys
+necessary for creating each certificate are in that state.  Thus, a
+good certificate cannot be created without those keys.
 
 \subsection{Keys and Certificates}
 
@@ -549,17 +557,15 @@ information for an LAK or LDevID.
 
 \subsection{Protocols}
 
-Commands are sequenced linearly by the \verb|sequence| type which is
-identical in structure to the Coq type \verb|list|. Sequential command
-execution is defined as an inductive proposition relating an current
-state pair, a command sequence, and a next state pair. Sequential
-execution is done by first executing the command at the head of the
-list using the single command execution relation \verb|execute|
-followed by executing the sequence at the tail of the list using the
-sequential execution relation \verb|seq_execute|. The next state pair
-produced by executing the single command is used as the current state
-pair for the subsequent sequence. This recursive structure allows for
-the convenient use of induction in many proofs.
+Commands are sequenced linearly by the \verb|sequence| type to form
+protocols. Protocol execution is defined as an inductive proposition
+relating a current state pair, a command sequence, and a next state
+pair. Sequential execution first executes the command at the head of a
+sequence using the single command execution relation \verb|execute|
+followed by executing the remaining sequence using the sequential
+execution relation \verb|seq_execute|. The next state pair produced by
+the single command becomes the current state pair for the subsequent
+sequence.
 
 \begin{figure}[hbtp]
 \begin{lstlisting}[language=Coq]
@@ -567,15 +573,12 @@ Inductive sequence : Type :=
 | Sequence : command -> sequence -> sequence
 | Done : sequence.
 
-Infix ";;" := Sequence (at level 60, right associativity).
-
 Inductive seq_execute : tpm_state * state -> sequence -> tpm_state * state -> Prop :=
 | SE_Seq : forall ini mid fin c s,
     execute ini c mid ->
     seq_execute mid s fin ->
     seq_execute ini (Sequence c s) fin
-| SE_Done : forall ini,
-    seq_execute ini Done ini.
+| SE_Done : forall ini, seq_execute ini Done ini.
 \end{lstlisting}
 \caption{Command Sequence Model}
 \label{fig:command-sequence-model}
@@ -839,18 +842,18 @@ have now confirmed that Assurance B is in fact guaranteed by the
 protocol when we assume that both the Owner and the CA are trusted to
 execute their steps correctly.
 
-We now attempt verification of this same goal under the conditions of
-scenario 2 where only the CA is trusted to execute its steps
-correctly. This proof is troublesome and likely impossible if we make
-no assumptions regarding the Owner.  Because the certification request
-and its contents must have been produced by some entity, we consider
-the Owner to be this entity.  Thus, we describe the Owner and its
-characteristics as a series of assumptions: the Owner executes some
-unknown sequence of commands \verb|s|, this sequence produces some
-message \verb|msg| in the Owner's next \verb|state|, the Owner's
-initial \verb|tpm_state| may only contain private keys, the Owner's
-initial \verb|state| may only contain public keys and certificates,
-and the CA executes its prescribed sequence on the message \verb|msg|.
+
+We now attempt verification of the same goal under scenario 2 where
+only the CA is trusted to execute its steps correctly. This proof is
+troublesome if we make no assumptions about the Owner.  Because the
+certification request and its contents must have been produced by some
+entity, we assume the Owner to be this entity.  Owner and its
+characteristics are represented as a series of assumptions: the Owner
+executes some unknown sequence of commands \verb|s|; \verb|s| produces
+a message \verb|msg| in the Owner's next \verb|state|; the Owner's
+initial \verb|tpm_state| only contains private keys; the Owner's
+initial \verb|state| only contains public keys and certificates; and
+the CA executes its procedure on the message \verb|msg|.
 
 \begin{figure}[hbtp]
 \begin{lstlisting}[language=Coq]
@@ -869,62 +872,59 @@ Theorem lak_and_iak_in_TPM : forall s iniTPM ini finTPM fin msg iak lak cert,
 
 These assumptions do not impact the Owner's trustworthiness. The LAK,
 IAK, and IAK certificates are universally quantified making no
-reference to the Owner. The assumptions aim only to constrain the
+reference to the Owner. The assumptions simply constrain the
 certification request, \verb|msg|, and its contents to the Owner.  The
 restrictions on the Owner's initial state pair are the main
-contributors to enforcement of this constraint. Due to the nature of
-command execution, the certification request and all of its contents
-must have be produced by a command or contained in the initial state.
-Therefore, restrictions placed on the initial state allow only those
-messages that cannot be generated by a command sequence.  The
+contributors to this constraint. Due to the nature of command
+execution, the certification request and its contents must have be
+produced by a command or contained in the initial state.  Therefore,
+restrictions placed on the initial state allow only those messages
+that cannot be generated by a command sequence.  The
 \verb|needsGeneratedTPM| function restricts the Owner's initial
 \verb|tpm_state| to include only previously created private keys while
 the \verb|needsGenerated| function restricts the Owner's initial
 \verb|state| to include public keys and previously issued
-certificates.  The subject of these certificates may be the Owner
-itself or any other entity.  These restrictions prevent other messages
-in the Owner state from being used to build the certification request.
+certificates.  The subject of these certificates may be the Owner or
+another entity.  These restrictions prevent using other messages in the
+Owner state to build the certification request.
 
-The next step is using this series of assumptions to learn more about
-the Owner. We cannot directly prove the new LAK is loaded on the same
-TPM as the IAK, but we can derive an important conclusion about the
-command sequence the Owner executes. Specifically, the sequence
-\verb|s| is a supersequence of the correct steps of the Owner.  We
-define a cascading collection of recursive functions to determine
-whether a given sequence of commands is a supersequence of
-\verb|steps1to5_Owner|.  Using the current assumptions about Owner and
-the CA we prove the Owner's unknown sequence \verb|s| satisfies
-this property. The proof relies on the structure of the
-certification request as it is required by the CA's steps. In order to
-produce a message with this structure, specific commands must be
-executed in a specific order.
+We cannot directly prove the new LAK is loaded on the same TPM as the
+IAK, but we can derive an important conclusion about the command
+sequence the Owner executes. Specifically, the sequence \verb|s| is a
+supersequence of the Owner's correct steps.  We define a cascading
+collection of recursive functions to determine whether a given command
+sequence is a supersequence of \verb|steps1to5_Owner|.  Using current
+assumptions about Owner and the CA we prove the Owner's unknown
+sequence \verb|s| satisfies this property. The proof relies on the
+structure of the certification request as required by the CA's
+steps. To produce a message with this structure, specific
+commands must be executed in a specific order.
 
-The next step is demonstrating the Owner must have executed
-\verb|TPM2_Certify| on the public LAK and private IAK.  Recall our
-conclusion that the LAK and IAK must be loaded on the same TPM if the
-LAK is certified using the IAK. Using the previous conclusion it is
-trivial to prove this command is contained within the Owner's sequence
-\verb|s|.  We use the function \verb|command_in_sequence| to describe
-this scenario.  We prove one last set of intermediate lemmas that show
-that the LAK and IAK must be loaded on the same TPM for one to execute
-any sequence that contains this command.  The composition of these
-small proofs leads to our end goal shown in Figure
-\ref{fig:lak_goal}. Due to extra parameters and criteria of the
-\verb|steps_CA| function, the proof statement states that the inverse
-of the key contained in the IAK certificate and the inverse of the key
-contained in the new certificate are loaded on the same TPM.  This is
-the assertion described by Assurance B.  Therefore, we have proven
-that Assurance B is in fact guaranteed by the protocol assuming only
-that the CA is trusted to execute its steps correctly.
+Next we demonstrate the Owner must have executed \verb|TPM2_Certify|
+on the public LAK and private IAK.  Recall our conclusion that the LAK
+and IAK must be loaded on the same TPM if the LAK is certified using
+the IAK. Using the previous conclusion it is trivial to prove this
+command is contained within the Owner's sequence \verb|s|.  We use the
+function \verb|command_in_sequence| to describe this scenario.  We
+prove one last set of intermediate lemmas that show that the LAK and
+IAK must be loaded on the same TPM to execute any sequence that
+contains this command.  The composition of these small proofs leads to
+the goal shown in Figure \ref{fig:lak_goal}. Due to extra parameters
+and criteria of the \verb|steps_CA| function, the theorem states that
+the inverse of the key contained in the IAK certificate and the
+inverse of the key contained in the new certificate are loaded on the
+same TPM.  This is the assertion described by Assurance B.  Therefore,
+we have proven that Assurance B is guaranteed by the protocol assuming
+only the CA is trusted to execute its steps correctly.
 
-This procedure uses the previously provisioned IAK to prove the
-new LAK is loaded on the same TPM and thus contained in the device
-identified by the IAK certificate. Therefore, when issuing the LAK
-certificate, the CA should use the same device identifying information
-as that from the IAK certificate's Subject field. To summarize,
-Assurance A is guaranteed by the attribute check performed by the CA
-and Assurance B is guaranteed by the IAK's \verb|Restricted| attribute
-and the signed \verb|TPM2B_Attest| structure.
+The procedure uses the previously provisioned IAK to prove the new LAK
+is loaded on the same TPM and thus contained in the device identified
+by the IAK certificate. Thus, when issuing the LAK certificate, the CA
+should use the same device identifying information as the IAK
+certificate's Subject field. To summarize, Assurance A is guaranteed
+by the attribute check performed by the CA and Assurance B is
+guaranteed by the IAK's \verb|Restricted| attribute and the signed
+\verb|TPM2B_Attest| structure.
 
 \subsection{OEM Creation of IAK Certificate based on EK Certificate}
 
@@ -1074,22 +1074,21 @@ is credentialed by the EK. The two required proofs to determine
 minimality proceed similarly to the corresponding proof in the
 previous section.
 
-We now attempt formal verification of this same goal when only the CA
-is trusted to execute its steps correctly.  We describe the OEM and its
+We now attempt to verify the same goal assuming only the CA is trusted
+to execute its steps correctly.  We describe the OEM and its
 characteristics as a series of assumptions: the OEM executes some
-unknown sequence of commands \verb|s1|, this sequence produces some
-message \verb|msg| in the OEM's intermediate \verb|state|, the OEM's
-initial \verb|tpm_state| may only contain private keys, the OEM's
-initial \verb|state| may only contain public keys and certificates,
-the CA executes its prescribed sequence on the message \verb|msg| and
-sends the challenge blob
-\verb|encryptedCredential (hash (publicKey iak)) g ek| to the OEM, the
-OEM executes some unknown sequence of commands \verb|s2|, this
-sequence releases the secret nonce value \verb|g| into the OEM's next
-\verb|state|. The CA's final steps are implicit in the fact that the
-nonce in the challenge blob is the same as the nonce in the OEM's next
-\verb|state|.  To complete this proof, no further knowledge of the OEM's initial
-sequence \verb|s1| is needed.  
+unknown sequence of commands \verb|s1|; \verb|s| produces some message
+\verb|msg| in the OEM's intermediate \verb|state|; the OEM's initial
+\verb|tpm_state| may only contain private keys, the OEM's initial
+\verb|state| may only contain public keys and certificates; the CA
+executes its protocol on \verb|msg| and sends the challenge blob
+\verb|encryptedCredential (hash (publicKey iak)) g ek| to the OEM; the
+OEM executes some unknown command sequence \verb|s2|; and \verb|s2|
+releases the secret nonce value \verb|g| into the OEM's next
+\verb|state|. The CA's final steps are implicit in that the nonce in
+the challenge blob is the same nonce in the OEM's next \verb|state|.
+To complete this proof, no further knowledge of the OEM's initial
+sequence \verb|s1| is needed.
 
 \begin{figure}[hptb]
 \begin{lstlisting}[language=Coq]
