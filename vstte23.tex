@@ -139,25 +139,25 @@ the Direct Anonymous Attestation (DAA) scheme in the TPM 2.0. Both of
 these protocols aim to accomplish the same fundamental purpose: allow
 remote authentication of a device while maintaining its
 anonymity. These protocols differ from the key certification protocols
-analyzed in my work which aim to provide individual identification of
+analyzed in our work which aim to provide individual identification of
 a device.  The work of~\citet{PrivacyCAAnalysis-Chen} analyzes the
 Privacy CA protocol in the presence of an adversary. They suggest a
 small modification to the protocol that enhances its security without
-changing the existing functionality of the TPM 1.2. I similarly
-suggest a small modification to the IAK provisioning procedure which
+changing the existing functionality of the TPM 1.2. Our work similarly
+suggests a small modification to the IAK provisioning procedure which
 requires no change to the existing functionality of the TPM 2.0.  On
 the other hand, the work of~\citet{PrivacyCAAnalysis-Hall,TPM12Model}
 analyzes the Privacy CA protocol but does not consider any specific
 adversary. Instead, they consider the functional correctness of the
 protocol and specifically examine the protocol implementation to
-ensure that it produces the results that it should.  My work has many
+ensure that it produces the results that it should.  Our work has many
 parallels to the works of~\citeauthor{PrivacyCAAnalysis-Hall}.  We
 attempt to determine whether the implementations of certain key
 certification protocols result in the assurances that they should.
 Furthermore,~\citeauthor{PrivacyCAAnalysis-Hall} abstractly model a
 large subset of the TPM 1.2 commands in the PVS specification
 language. They model TPM command execution as a transition system over
-an abstract system state. We implement this same technique in my own
+an abstract system state. We implement this same technique in our own
 work but over a small subset of TPM 2.0 commands as well as several
 non-TPM commands.
 
@@ -411,18 +411,9 @@ Figure~\ref{fig:cert_rel}.
 
 \section{Protocol Execution Model}
 
-Certificate authority protocols for generating DevID certificates are
-correct if the creation of a good certificate ensures TPM residency of
-keys necessary to create the certificate.  The CA's signature on the
-DevID should make this guarantee.
-
-We use a labeled transition system to model TPM command execution over
-sets of keys and certificates.  CA protocols are modeled as sequences
-of TPM instructions executed by the CA and by the OEM for the IDevID
-and Owner for the LDevID respectively. A minimum initial state for
-successful protocol execution is defined and we establish that keys
-necessary for creating each certificate are in that state.  Thus, a
-good certificate cannot be created without those keys.
+We use a labeled transition system to model abstract command execution.
+DevID-provisioning protocols are modeled as sequences
+of instructions executed by the CA and by the OEM or Owner.
 
 \subsection{Keys and Certificates}
 
@@ -1359,11 +1350,10 @@ specific device.
 %
 \section{Conclusions and Future Work}
 
-Major contributions of this research are summarized as: (i) a
-general investigation into TPM-based DevIDs and chains of
-certificates; (ii) the design and implementation of an abstract formal
-model of command execution; (iii) an in-depth analysis of two
-TCG-provided key certification protocols, and (iv) the discovery of a
+Major contributions of this research are summarized as: 
+(i) the design and implementation of an abstract formal
+model of command execution; (ii) an in-depth analysis of two
+TCG-provided key certification protocols, and (iii) the discovery of a
 potential shortcoming ing the IAK provisioning procedure and a
 recommendation for its improvement.
 
@@ -1377,7 +1367,9 @@ encouraged during IAK certification to assure the CA it is issuing a
 certificate to a device running trusted software.  To include
 necessary PCR--related commands, the structure of abstract state
 should be modified from a pair to a record similar to that of the work
-of \citet{PrivacyCAAnalysis-Hall}.
+of \citet{PrivacyCAAnalysis-Hall}. These advancements to the model
+also provide the mechanisms necessary to verify our recommended changes to
+the IAK provisioning procedure.
 
 % 
 % 
