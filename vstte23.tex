@@ -197,19 +197,19 @@ authenticity.  To tie attestation data to a specific device, the
 signing key must be cryptographically bound to that device making the
 key a secure device identifier.
 
-A TPM key is an asymmetric key that can only be used by the creating
-TPM.  Primary TPM keys created with \verb|TPM2_CreatePrimary| are
-maintained internally by the TPM as roots for chaining key ownership.
-Primary keys are shielded and unavailable outside the TPM.  Ordinary
-TPM keys created with \verb|TPM2_Create| and are wrapped by a parent
-TPM key and can be stored outside the TPM.  The wrapping operation
-encrypts the ordinary TPM key's private key with the parent's public
-key and includes a PCR composite. The public key remains clear and can
-be used for encryption and signature checking.  However, decryption
-and signing is impossible if the parent key is not installed in the
-TPM to decrypt the private key.  Wrapping creates an ownership chain
-from ordinary keys to a primary key that cannot be removed from the
-TPM, thus binding keys in the chain to the TPM.
+% A TPM key is an asymmetric key that can only be used by the creating
+% TPM.  Primary TPM keys created with \verb|TPM2_CreatePrimary| are
+% maintained internally by the TPM as roots for chaining key ownership.
+% Primary keys are shielded and unavailable outside the TPM.  Ordinary
+% TPM keys created with \verb|TPM2_Create| and are wrapped by a parent
+% TPM key and can be stored outside the TPM.  The wrapping operation
+% encrypts the ordinary TPM key's private key with the parent's public
+% key and includes a PCR composite. The public key remains clear and can
+% be used for encryption and signature checking.  However, decryption
+% and signing is impossible if the parent key is not installed in the
+% TPM to decrypt the private key.  Wrapping creates an ownership chain
+% from ordinary keys to a primary key that cannot be removed from the
+% TPM, thus binding keys in the chain to the TPM.
 
 Keys have attributes that define their purpose in TPM, restricting how
 they are used. Attributes include \verb|FixedTPM| to control
@@ -307,7 +307,7 @@ Figure~\ref{fig:cert_rel}.
     black arrows are trust relationships formed by key creation.  Red
     arrows denote key inclusion in certificates. Certificates are
     labeled with their associated CS~\citep{DevIDSpec-TCG}.}
-  \label{fig:cert-rel}
+  \label{fig:cert_rel}
 \end{figure}
 
 % \begin{figure}[htbp]
@@ -337,7 +337,7 @@ aliases for the device and are the only DevIDs shared.  A single
 device may have many identifying LAKs and LDevID certificates, but
 trust for each is rooted in the IAK and transitively the EK.
 
-\section{Protocol Execution}
+\section{Protocol Execution Model}
 
 Certificate authority protocols for generating DevID certificates are
 correct if the creation of a good certificate ensures TPM residency of
@@ -615,14 +615,11 @@ state implying that command sequence execution is monotonic.
 %
 %
 %
-\section{Identity Provisioning}
+\section{Proof Techniques}
 
-To mantain a cryptographic evidentiary chain linking a DevID to a
-specific TPM and device, the CA should follow certain provisioning
-procedures. The TCG describes several such procedures in
-\citet{DevIDSpec-TCG}.  We consider two procedures in detail: OEM
-creation of an IAK certificate based on an EK certificate and Owner
-creation of an LAK certificate based on an IAK certificate.  For each
+The TCG describes several provisioning protocols in
+\citet{DevIDSpec-TCG} that aim to maintain a cryptographic evidentiary 
+chain linking a DevID to a specific TPM and device. For each
 protocol, the specification outlines steps for the CA and the
 certificate-requesting entity.  The specification claims that each
 protocol provides certain assurances.  Each assurance manifests as an
@@ -635,9 +632,108 @@ guarantees its associated assurances.
 When verifying these goals, we consider two scenarios: (i) the
 certificate-requesting entity and the CA are both trusted to execute
 their steps correctly; and (ii) only the CA is trusted to execute its
+steps correctly. We use a novel proof technique for each scenario to 
+perform the verifications on TPM-residency: minimal initial state and 
+supersequence respectively.
+
+\subsection{Minimal Initial State}
+
+A minimal initial state aims to quantitatively describe the 
+prerequisites for executing a command sequence. 
+Given a command sequence, a minimal initial state is defined
+as the smallest initial state that allows for
+successful execution of the sequence. The proof obligation describing
+this property is constructed by two parts: (i) the minimal initial
+state is a lower bound on the set of possible initial states and (ii)
+the minimal initial state is sufficient for successful execution.
+
+\begin{figure}[hbtp]
+\begin{lstlisting}[language=Coq]
+Definition lower_bound seq minTPM min : Prop :=
+  forall iniTPM ini fin,
+  seq_execute (iniTPM, ini) seq fin ->
+  (minTPM \subsetOf iniTPM) /\ (min \subsetOf ini).
+
+Definition sufficient seq minTPM min : Prop :=
+  exists fin, seq_execute (minTPM, min) seq fin.
+\end{lstlisting}
+\caption{Minimal Initial State}
+\end{figure}
+
+We use this technique to demonstrate that an unknown key is
+loaded on the same TPM as some previously-certified key if
+the certificate-requesting entity follows the TCG's recommended
+procedure. 
+
+
+\subsection{Supersequence}
+
+A CA will only issue a certificate if it recieves a valid certification request. 
+A certification request and its contents must have been produced by some entity. 
+Therefore we constrain the production of the request and its contents to the 
+certificate-requesting entity. The constraint is enforced by restricting
+the useable elements of the entity's initial state. The \verb|needsGenerated|
+function defines the types of messages that must be generated by a command
+or command sequence. All messages except keys and certificates must
+be generated. 
+
+
+\begin{figure}[hbtp]
+  \begin{lstlisting}[language=Coq]
+Definition constrain_CSR_production (steps_CA : message -> Prop) : Prop :=
+  forall seq iniTPM ini finTPM fin,
+  seq_execute (iniTPM, ini) seq (finTPM, fin) ->
+  (forall m', needsGenerated m' -> ~ In m' iniTPM) ->
+  (forall m', needsGenerated m' -> ~ In m' ini) ->
+  In csr fin ->
+  steps_CA csr.
+  \end{lstlisting}
+  \caption{Constrain CSR Production}
+  \end{figure}
+
+The constraint is formally defined by a series of logical statements:
+the certificate-requesting entity executes some arbitrary command sequence,
+their useable initial state pair contains only messages that need not be generated, 
+the command sequence produces some message in their final state, 
+and a CA determines that the message is a valid certification request.
+
+To produce a message in the shape of a valid certification request, 
+specific commands must be executed in a specific order.
+In fact, due to the shape of a valid request and the checks performed by a CA,
+we can prove that any command sequence that the certificate-requesting
+entity performed to generate the request is a supersequence of their
+correct steps. A list is a supersequence of another list if and only if
+all the elements of the second list occur in order in the first --- the
+elements need not occur consecutively. 
+
+With this knowledge of the certificate-requesting entity's behaviour,
+we can apply an abbreviated version of the minimal initial state
+technique to complete our verification.
+
+
+\section{Identity Provisioning}
+
+The TCG describes several protocols in
+\citet{DevIDSpec-TCG} for provisioning DevIDs on TPM-containing devices.
+We consider two protocols in detail: 
+Owner creation of an LAK certificate based on an IAK certificate and
+OEM creation of an IAK certificate based on an EK certificate  For each
+protocol, the specification outlines steps for the CA and the
+certificate-requesting entity. The specification claims that each
+protocol provides certain assurances. Each assurance manifests as an
+assertion regarding either TPM-residency, key attributes, or
+previously-issued certificates and provides the basis for the
+resulting cryptographic evidentiary chain formed by a chain of
+certificates. We verify that each protocol
+guarantees its associated assurances, thereby determining
+their correctness.
+
+When verifying these goals, we consider two scenarios: (i) the
+certificate-requesting entity and the CA are both trusted to execute
+their steps correctly; and (ii) only the CA is trusted to execute its
 steps correctly.  Because trust for creation of a new certificate is
 rooted in an existing certificate, these scenarios include the
-presupposition that previously-issued certificates imply the assurance
+presupposition that previously-issued certificates imply the assurances
 from their provisioning protocols.
 
 \subsection{Owner Creation of LAK Certificate based on IAK Certificate}
@@ -645,7 +741,7 @@ from their provisioning protocols.
 The TCG's specification claims that the procedure in
 Figure~\ref{fig:lak-certificate-creation} provides
 these assurances: (A) the LAK has good attributes; and (B) the LAK is
-loaded on the same TPM as the IAK. These assurances correspond exactly
+loaded on the same TPM as the IAK. These assurances correspond
 with the Chain of Trust line C in Figure \ref{fig:cert_rel}.
 
 \begin{figure}[hpbt]
@@ -675,12 +771,13 @@ with the Chain of Trust line C in Figure \ref{fig:cert_rel}.
   \label{fig:lak-certificate-creation}
 \end{figure}
 
-Modeling this protocol begins by initializing state for the Owner and
+Modeling this protocol begins by initializing states for the Owner and
 CA. The Owner must have its LAK, IAK, and IAK certificate, and the CA
-must have its own key and the public key of the OEM's CA.  Private key
-values are represented by taking the inverse of the corresponding
-public key and are stored in the \verb|privLAK|, \verb|privIAK|, and
-\verb|privCA| variables. To enforce the randomness of cryptographic
+must have its own key and the public key of the OEM's CA.  
+% Private key values are represented by taking the inverse of the corresponding
+% public key and are stored in the \verb|privLAK|, \verb|privIAK|, and
+% \verb|privCA| variables. 
+To enforce the randomness of cryptographic
 keys, all key values are specified to be pairwise distinct.
 
 % \begin{figure}[hbtp]
@@ -706,7 +803,7 @@ keys, all key values are specified to be pairwise distinct.
 % \caption{Parameters of LAK Provisioning Procedure}
 % \end{figure}
 
-The certificate generation procedure is modeled as the composition of
+The procedure is modeled as the composition of
 two parts: the Owner's steps (i.e., Steps 0-5) followed by the CA's
 steps (i.e., Steps 6-7).  Each part of the procedure is modeled using
 the initialized state and the sequential command construction defined
@@ -735,19 +832,18 @@ TPM2_Certify pubLAK privIAK
 
 We construct an object of \verb|sequence| type for the Owner and an
 object of function type for the CA. Constructing the Owner's steps is
-straightforward and shown in Figure~\ref{fig:lak_model_Owner}. Since
-this model disallows the arbitrary creation of keys, Step 0 is assumed
-to have been performed prior; the results of Step 0 are in fact
-already encapsulated in the \verb|pubLAK| parameter and \verb|privLAK|
-variable. Then each remaining step of the Owner corresponds with
+straightforward and shown in Figure~\ref{fig:lak_model_Owner}. Step 0 is assumed
+to have been performed prior since its results are 
+already encapsulated in the Owner's initialized state.
+Each remaining step of the Owner corresponds with
 exactly one command in the model, namely \verb|TPM2_Certify| for Step
 1, \verb|MakeCSR_LDevID| for Step 2, \verb|TPM2_Hash| for Step 3,
 \verb|TPM2_Sign| for Step 4, and \verb|MakePair| for Step 5.
 
 The CA's steps in Figure~\ref{fig:lak_model_CA} are more complex as
-they rely on the certification request produced by the Owner's
-steps. First, the CA waits to receive a certification request from the
-Owner (see the \verb|msg| input). The request must be in a specific
+they rely on the certification request produced by the Owner. 
+First, the CA waits to receive a certification request from the
+Owner. The request must be in a specific
 format to be considered valid. The CA then executes Step 6 of the
 procedure defined by the sequence within \verb|seq_execute|. If
 execution succeeds, the CA issues the LAK certificate to the Owner.
@@ -784,22 +880,13 @@ Step 6 of the provisioning procedure.  It follows that successful
 execution implies the LAK has all attributes required to be an
 attestation key.
 
-We now verify Assurance B under the conditions of scenario 1 where the
+We now verify Assurance B under the conditions of the first scenario where the
 Owner and the CA are both trusted to execute their steps
 correctly. Recall that this proof trusts that the
 previously--performed IAK provisioning guarantees its
 associated assurances, specifically that the IAK has good attributes.
 
-First, we examine the Owner's steps and associated requirements. These
-requirements can be quantitatively described by a minimal initial
-state pair. Given a sequence, a minimal initial state pair is defined
-as the smallest \verb|tpm_state| and \verb|state| that allows for
-successful execution of the sequence. The proof statement describing
-this property is constructed by two parts: (i) the minimal initial
-state is a lower bound on the set of possible initial states and (ii)
-the minimal initial state is sufficient for successful execution.
-
-We build a minimal initial state pair for \verb|steps1to5_Owner| using
+We construct a minimal initial state pair for \verb|steps1to5_Owner| using
 the following intuition: (i) the private LAK and private IAK are
 loaded on the same TPM because the LAK is certified by the IAK and
 (ii) the IAK certificate is known to the Owner because it is included
@@ -811,106 +898,120 @@ the minimal initial state pair and \verb|steps1to5_Owner|. This proof
 relies on two assumptions, the IAK has good attributes and that the CA
 issues the LAK certificate.
 
-\begin{figure}[hbtp]
-\begin{lstlisting}[language=Coq]
-Definition iniTPM_Owner : tpm_state := [ privateKey privLAK
-                                       ; privateKey privIAK ].
+% \begin{figure}[hbtp]
+% \begin{lstlisting}[language=Coq]
+% Definition minTPM_Owner : tpm_state := [ privateKey privLAK
+%                                        ; privateKey privIAK ].
 
-Definition ini_Owner : state := [ signedCertificate certIAK ].
+% Definition min_Owner : state := [ signedCertificate certIAK ].
 
-Lemma ini_Owner_lowerBound : forall iniTPM ini fin,
-  seq_execute (iniTPM, ini) steps1to5_Owner fin ->
-  (iniTPM_Owner \subsetOf iniTPM) /\ (ini_Owner \subsetOf ini).
+% Lemma lower_bound_Owner : 
+%   lower_bound steps1to5_Owner minTPM_Owner min_Owner.
 
-Lemma ini_Owner_sufficient : forall msg,
-  attestationKey pubIAK ->
-  steps_CA msg pubIAK pubLAK certIAK ->
-  exists fin, seq_execute (iniTPM_Owner, ini_Owner) steps1to5_Owner fin.
-\end{lstlisting}
-\caption{Minimal Initial State of Owner}
-\end{figure}
+% Lemma sufficient_Owner : forall msg,
+%   attestationKey pubIAK ->
+%   steps_CA msg pubIAK pubLAK certIAK ->
+%   sufficient steps1to5_Owner minTPM_Owner min_Owner.
+% \end{lstlisting}
+% \caption{Minimal Initial State of Owner}
+% \end{figure}
 
-This analysis of the Owner's steps' requirements in the form of a
+This analysis of the Owner's steps' prerequisites in the form of a
 minimal initial state leads to the conclusion that the LAK and IAK
 must be loaded on the same TPM for the Owner to execute its
-steps. This conclusion is manifest in the \verb|iniTPM_Owner| variable
-which contains both the private LAK and private IAK. In conclusion, we
-have now confirmed that Assurance B is in fact guaranteed by the
+steps. 
+%This conclusion is manifest in the \verb|iniTPM_Owner| variable
+% which contains both the private LAK and private IAK. 
+Therefore, we have now confirmed that Assurance B is in fact guaranteed by the
 protocol when we assume that both the Owner and the CA are trusted to
 execute their steps correctly.
 
 
-We now attempt verification of the same goal under scenario 2 where
-only the CA is trusted to execute its steps correctly. This proof is
-troublesome if we make no assumptions about the Owner.  Because the
-certification request and its contents must have been produced by some
-entity, we assume the Owner to be this entity.  Owner and its
-characteristics are represented as a series of assumptions: the Owner
-executes some unknown sequence of commands \verb|s|; \verb|s| produces
-a message \verb|msg| in the Owner's next \verb|state|; the Owner's
-initial \verb|tpm_state| only contains private keys; the Owner's
-initial \verb|state| only contains public keys and certificates; and
-the CA executes its procedure on the message \verb|msg|.
-
-\begin{figure}[hbtp]
-\begin{lstlisting}[language=Coq]
-Theorem lak_and_iak_in_TPM : forall s iniTPM ini finTPM fin msg iak lak cert,
-  seq_execute (iniTPM, ini) s (finTPM, fin) -> 
-  In msg fin ->
-  (forall m', needsGeneratedTPM m' -> ~ In m' iniTPM) ->
-  (forall m', needsGenerated m' -> ~ In m' ini) ->
-  steps_CA msg iak lak cert ->
-  In (privateKey (pubToPrivKey lak)) iniTPM
-  /\ In (privateKey (pubToPrivKey iak)) iniTPM
-\end{lstlisting}
-\caption{Next Verification Goal for LAK Provisioning Procedure}
-\label{fig:lak_goal}
-\end{figure}
-
-These assumptions do not impact the Owner's trustworthiness. The LAK,
-IAK, and IAK certificates are universally quantified making no
-reference to the Owner. The assumptions simply constrain the
-certification request, \verb|msg|, and its contents to the Owner.  The
-restrictions on the Owner's initial state pair are the main
-contributors to this constraint. Due to the nature of command
-execution, the certification request and its contents must have be
-produced by a command or contained in the initial state.  Therefore,
-restrictions placed on the initial state allow only those messages
-that cannot be generated by a command sequence.  The
-\verb|needsGeneratedTPM| function restricts the Owner's initial
-\verb|tpm_state| to include only previously created private keys while
-the \verb|needsGenerated| function restricts the Owner's initial
-\verb|state| to include public keys and previously issued
-certificates.  The subject of these certificates may be the Owner or
-another entity.  These restrictions prevent using other messages in the
-Owner state to build the certification request.
-
-We cannot directly prove the new LAK is loaded on the same TPM as the
-IAK, but we can derive an important conclusion about the command
-sequence the Owner executes. Specifically, the sequence \verb|s| is a
-supersequence of the Owner's correct steps.  We define a cascading
+We now attempt verification of the same goal under the second scenario where
+only the CA is trusted to execute its steps correctly. We constrain the production
+of the certification request and its contents to the Owner so that we can achieve
+the supersequence conclusion. We define a cascading
 collection of recursive functions to determine whether a given command
-sequence is a supersequence of \verb|steps1to5_Owner|.  Using current
-assumptions about Owner and the CA we prove the Owner's unknown
-sequence \verb|s| satisfies this property. The proof relies on the
-structure of the certification request as required by the CA's
-steps. To produce a message with this structure, specific
-commands must be executed in a specific order.
+sequence is a supersequence of \verb|steps1to5_Owner|.  Using the assumptions
+provided by the \verb|constrain_CSR_production| definition, we prove the Owner's 
+unknown command sequence satisfies this function.
+% This proof is
+% troublesome if we make no assumptions about the Owner.  Because the
+% certification request and its contents must have been produced by some
+% entity, we assume the Owner to be this entity.  Owner and its
+% characteristics are represented as a series of assumptions: the Owner
+% executes some unknown sequence of commands \verb|s|; \verb|s| produces
+% a message \verb|msg| in the Owner's next \verb|state|; the Owner's
+% initial \verb|tpm_state| only contains private keys; the Owner's
+% initial \verb|state| only contains public keys and certificates; and
+% the CA executes its procedure on the message \verb|msg|.
 
-Next we demonstrate the Owner must have executed \verb|TPM2_Certify|
-on the public LAK and private IAK.  Recall our conclusion that the LAK
-and IAK must be loaded on the same TPM if the LAK is certified using
-the IAK. Using the previous conclusion it is trivial to prove this
-command is contained within the Owner's sequence \verb|s|.  We use the
-function \verb|command_in_sequence| to describe this scenario.  We
-prove one last set of intermediate lemmas that show that the LAK and
-IAK must be loaded on the same TPM to execute any sequence that
-contains this command.  The composition of these small proofs leads to
-the goal shown in Figure \ref{fig:lak_goal}. Due to extra parameters
-and criteria of the \verb|steps_CA| function, the theorem states that
+% \begin{figure}[hbtp]
+% \begin{lstlisting}[language=Coq]
+% Theorem lak_and_iak_in_TPM : forall s iniTPM ini finTPM fin msg iak lak cert,
+%   seq_execute (iniTPM, ini) s (finTPM, fin) -> 
+%   In msg fin ->
+%   (forall m', needsGeneratedTPM m' -> ~ In m' iniTPM) ->
+%   (forall m', needsGenerated m' -> ~ In m' ini) ->
+%   steps_CA msg iak lak cert ->
+%   In (privateKey (pubToPrivKey lak)) iniTPM
+%   /\ In (privateKey (pubToPrivKey iak)) iniTPM
+% \end{lstlisting}
+% \caption{Next Verification Goal for LAK Provisioning Procedure}
+% \label{fig:lak_goal}
+% \end{figure}
+
+% These assumptions do not impact the Owner's trustworthiness. The LAK,
+% IAK, and IAK certificates are universally quantified making no
+% reference to the Owner. The assumptions simply constrain the
+% certification request, \verb|msg|, and its contents to the Owner.  The
+% restrictions on the Owner's initial state pair are the main
+% contributors to this constraint. Due to the nature of command
+% execution, the certification request and its contents must have be
+% produced by a command or contained in the initial state.  Therefore,
+% restrictions placed on the initial state allow only those messages
+% that cannot be generated by a command sequence.  The
+% \verb|needsGeneratedTPM| function restricts the Owner's initial
+% \verb|tpm_state| to include only previously created private keys while
+% the \verb|needsGenerated| function restricts the Owner's initial
+% \verb|state| to include public keys and previously issued
+% certificates.  The subject of these certificates may be the Owner or
+% another entity.  These restrictions prevent using other messages in the
+% Owner state to build the certification request.
+
+% We cannot directly prove the new LAK is loaded on the same TPM as the
+% IAK, but we can derive an important conclusion about the command
+% sequence the Owner executes. Specifically, the sequence \verb|s| is a
+% supersequence of the Owner's correct steps.  We define a cascading
+% collection of recursive functions to determine whether a given command
+% sequence is a supersequence of \verb|steps1to5_Owner|.  Using current
+% assumptions about Owner and the CA we prove the Owner's unknown
+% sequence \verb|s| satisfies this property. The proof relies on the
+% structure of the certification request as required by the CA's
+% steps. To produce a message with this structure, specific
+% commands must be executed in a specific order.
+
+From here we need only demonstrate that the private LAK and private IAK
+must be loaded on the same TPM to execute a command sequence with this property.
+We do this by reusing the intuition described in the first scenario that
+the private LAK and private IAK are loaded on the same TPM if the LAK
+is certified by the IAK.
+% Next we demonstrate the Owner must have executed \verb|TPM2_Certify|
+% on the public LAK and private IAK.  Recall our conclusion that the LAK
+% and IAK must be loaded on the same TPM if the LAK is certified using
+% the IAK. Using the previous conclusion it is trivial to prove this
+% command is contained within the Owner's sequence \verb|s|.  We use the
+% function \verb|command_in_sequence| to describe this scenario.  We
+% prove one last set of intermediate lemmas that show that the LAK and
+% IAK must be loaded on the same TPM to execute any sequence that
+% contains this command.  The composition of these small proofs leads to
+% the goal shown in Figure \ref{fig:lak_goal}. 
+
+Due to extra parameters and criteria of the \verb|steps_CA| function, 
+the formal theorem states that
 the inverse of the key contained in the IAK certificate and the
 inverse of the key contained in the new certificate are loaded on the
-same TPM.  This is the assertion described by Assurance B.  Therefore,
+same TPM. This is the precise assertion made by Assurance B.  Therefore,
 we have proven that Assurance B is guaranteed by the protocol assuming
 only the CA is trusted to execute its steps correctly.
 
@@ -1002,17 +1103,19 @@ initial steps of the OEM and the OEM's CA are constructed similarly to
 the steps of the Owner and the Owner's CA respectively.  The OEM's
 final step is naturally constructed as a simple function. First the
 OEM waits to receive a challenge blob from the CA, then the OEM
-executes Step 7. As a result, the CA's final steps are implicit in the
+executes Step 7. The CA's final steps are implicit in the
 proof statements and do not require an explicit definition.
 
 Proving Assurance A is trivial and proceeds identically to the
 corresponding proof in the previous section. Proving Assurance C is
-also quite similar. The command
-\verb|CheckCert (Cert k0 id0 k_ca') pubTM| in the CA's function
-corresponds with Step 5 of the provisioning procedure. The CA's
-function binds the EK to the variable \verb|k0| and the EK certificate
-to the message \verb|Cert k0 id0 k_ca'|.  Successful execution of this
-command directly implies that EK certificate is valid.
+also quite similar since the CA checks the signature on the EK
+certificate with the public key of the TPM Manufacturer's CA. 
+% The command
+% \verb|CheckCert (Cert k0 id0 k_ca') pubTM| in the CA's function
+% corresponds with Step 5 of the provisioning procedure. The CA's
+% function binds the EK to the variable \verb|k0| and the EK certificate
+% to the message \verb|Cert k0 id0 k_ca'|.  Successful execution of this
+% command directly implies that EK certificate is valid.
 
 %% Figure is not referenced in the paper, thus pulling it to get back
 %% a page
@@ -1064,7 +1167,8 @@ execute their steps correctly. We implement the same strategy as
 before showing that the private IAK and private EK are contained in
 the OEM's minimal initial \verb|tpm_state|. We build a minimal initial
 state pair for the composition of \verb|steps1to4_OEM| and
-\verb|step7_OEM| assuming: (i) the EK certificate and public IAK are
+\verb|step7_OEM| using the following intuition: 
+(i) the EK certificate and public IAK are
 known to the Owner because they are included in the CSR and (ii) the
 private IAK and private EK are loaded on the same TPM because the IAK
 is credentialed by the EK. The two required proofs to determine
@@ -1072,59 +1176,62 @@ minimality proceed similarly to the corresponding proof in the
 previous section.
 
 We now attempt to verify the same goal assuming only the CA is trusted
-to execute its steps correctly.  We describe the OEM and its
-characteristics as a series of assumptions: the OEM executes some
-unknown sequence of commands \verb|s1|; \verb|s| produces some message
-\verb|msg| in the OEM's intermediate \verb|state|; the OEM's initial
-\verb|tpm_state| may only contain private keys, the OEM's initial
-\verb|state| may only contain public keys and certificates; the CA
-executes its protocol on \verb|msg| and sends the challenge blob
+to execute its steps correctly.  We constrain the production of the 
+certification request and its contents to the OEM by asserting
+that: the OEM executes some
+unknown sequence of commands \verb|s1|; \verb|s1| produces some message
+\verb|csr| in the OEM's intermediate state; the OEM's initial
+state contains only messages that need not be generated; the CA
+executes its steps on \verb|csr| and sends the challenge blob
 \verb|encryptedCredential (hash (publicKey iak)) g ek| to the OEM; the
 OEM executes some unknown command sequence \verb|s2|; and \verb|s2|
-releases the secret nonce value \verb|g| into the OEM's next
-\verb|state|. The CA's final steps are implicit in that the nonce in
-the challenge blob is the same nonce in the OEM's next \verb|state|.
-To complete this proof, no further knowledge of the OEM's initial
-sequence \verb|s1| is needed.
+releases the secret nonce value \verb|g| into the OEM's final
+state. The CA's final steps are implicit in that the nonce in
+the challenge blob is the same nonce in the OEM's state.
+
 
 \begin{figure}[hptb]
 \begin{lstlisting}[language=Coq]
 Theorem iak_and_ek_in_TPM :
-  forall s2 s1 iniTPM ini midTPM mid finTPM fin msg ident ek iak cert g,
-seq_execute (iniTPM, ini) s1 (midTPM, mid) -> 
-In msg mid ->
-(forall m', needsGeneratedTPM m' -> ~ In m' iniTPM) ->
-(forall m', needsGenerated m' -> ~ In m' ini) ->
-steps_CA msg ident ek iak cert ->
-seq_execute
-  (midTPM, inferFrom (encryptedCredential (hash (publicKey iak)) g ek) ++ mid)
-  s2 
-  (finTPM, fin) ->
-In (randomNum g) fin ->
-In (privateKey (pubToPrivKey iak)) iniTPM
-  /\ In (privateKey (pubToPrivKey ek)) iniTPM.
+  forall s2 s1 iniTPM ini midTPM mid finTPM fin csr ident ek iak cert g,
+  seq_execute (iniTPM, ini) s1 (midTPM, mid) -> 
+  In csr mid ->
+  (forall m', needsGeneratedTPM m' -> ~ In m' iniTPM) ->
+  (forall m', needsGenerated m' -> ~ In m' ini) ->
+  steps_CA csr ident ek iak cert ->
+  seq_execute
+   (midTPM, inferFrom (encryptedCredential (hash (publicKey iak)) g ek)++mid)
+    s2 
+   (finTPM, fin) ->
+  In (randomNum g) fin ->
+  In (privateKey (pubToPrivKey iak)) iniTPM /\ 
+  In (privateKey (pubToPrivKey ek)) iniTPM.
 \end{lstlisting}
 \caption{Final Verification Goal for IAK Provisioning Procedure}
 \label{fig:iak_goal}
 \end{figure}
 
-The OEM's final sequence \verb|s2| must now be analyzed.  We prove
-that \verb|s2| is a supersequence of the correct next steps of the OEM
-(i.e., \verb|step7_OEM|). This proof relies on two important
+From here we prove
+that \verb|s2| is a supersequence of the correct final steps of the OEM
+(i.e., Step 7). This proof relies on two important
 properties of sequential execution. The first being that one cannot
-produce a random number in its final \verb|state| without an encrypted
-credential containing that number in its initial \verb|state|. The
-next property states approximately the converse of the first, one
+produce a random number in its final state without an encrypted
+credential containing that number in its initial state. The
+second being approximately the converse of the first, one
 cannot produce an encrypted credential containing a particular random
-number in its final \verb|state| without that number or an encrypted
-credential containing that number in its initial \verb|state|.
+number in its final state without that number or an encrypted
+credential containing that number in its initial state.
 
-Our next step is to demonstrate that the OEM must in fact have
-executed \verb|TPM2_ActivateCredential| on the challenge blob using
-the private EK and private IAK. This result is a direct consequence of
-the supersequence conclusion. We then verify that execution of a
-sequence containing this command implies that the EK and IAK are
-loaded on the same TPM.  The composition of these small proofs leads
+We reuse the intuition from the first scenario to show that the private
+IAK and private EK are loaded on the same TPM if the IAK is
+credentialed by the EK.
+% Our next step is to demonstrate that the OEM must in fact have
+% executed \verb|TPM2_ActivateCredential| on the challenge blob using
+% the private EK and private IAK. This result is a direct consequence of
+% the supersequence conclusion. We then verify that execution of a
+% sequence containing this command implies that the EK and IAK are
+% loaded on the same TPM.  
+The composition of these intermediate proofs leads
 to our goal shown in Figure \ref{fig:iak_goal}.  Due to the extra
 parameters and criteria of the \verb|steps_CA| function, the proof
 statement shows that the inverse of the key contained in the EK
