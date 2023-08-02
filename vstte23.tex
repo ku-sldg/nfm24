@@ -185,17 +185,18 @@ agility, secure storage of keys, enhanced authorization, measurement
 storage and reporting, device identification, and NVRAM
 storage~\citep{{PracticalGuide}}.
 
-TPM-based attestation is high-integrity reporting of system
-measurements stored in platform configuration registers (PCRs).  PCRs
-store a composite of a measurement chain in a way that guarantees
-integrity. Rather than being set like a traditional register, a PCR is
-extended by concatenating a new hash to the current PCR value, hashing
-and storing the result.  Thus, a PCR captures both measurement value
-and order over an arbitrarily long measurement sequence.  An
-attestation is a PCR composite signed to guarantee integrity and
-authenticity.  To tie attestation data to a specific device, the
-signing key must be cryptographically bound to that device making the
-key a secure device identifier.
+Keys have attributes that are set at creation-time and restrict how
+they may be used. Attributes include \verb|FixedTPM| to control
+duplication, \verb|Sign| and \verb|Decrypt| to indicate use as a
+signing or decryption key, and \verb|Restricted| to limit operations 
+to TPM-generated data. 
+
+All TPMs are shipped with an essential storage key, the endorsement key (EK).
+The EK is a fixed-TPM, restricted, decryption key installed by the TPM
+Manufacturer in an immutable, shielded location on the TPM.
+The EK has an associated certificate that binds the EK to a specific TPM.
+Although not a DevID itself, the EK has a significant role in the
+provisioning of TPM-based device identity.
 
 % A TPM key is an asymmetric key that can only be used by the creating
 % TPM.  Primary TPM keys created with \verb|TPM2_CreatePrimary| are
@@ -211,17 +212,14 @@ key a secure device identifier.
 % from ordinary keys to a primary key that cannot be removed from the
 % TPM, thus binding keys in the chain to the TPM.
 
-Keys have attributes that define their purpose in TPM, restricting how
-they are used. Attributes include \verb|FixedTPM| to control
-duplication, \verb|Sign| and \verb|Decrypt| to indicate use as a
-signing or encryption key.  An additional \verb|Restricted| attribute
-further restricts signing and decryption keys.  A restricted signing
-key may only sign a PCR digest produced by the TPM during attestation
-and to prove that a new key is loaded on the same TPM as itself during
-certification.  A valid signature proves that quoted PCR values or new
-key are from the same TPM as the original key.  If the signing key is
-bound to the a TPM, then the PCR values or new key are also bound to
-the same TPM.
+
+
+% key may only sign a PCR digest produced by the TPM during attestation
+% and to prove that a new key is loaded on the same TPM as itself during
+% certification.  A valid signature proves that quoted PCR values or new
+% key are from the same TPM as the original key.  If the signing key is
+% bound to the a TPM, then the PCR values or new key are also bound to
+% the same TPM.
 
 % A restricted decryption key is called a storage key. Only storage keys
 % can be used as parents to create or load child objects or to activate
@@ -232,15 +230,117 @@ the same TPM.
 % DevID certificates.
 
 A secure device identifier (DevID) is a TPM key that is
-cryptographically bound to a device. Proper TPM key creation ensures
-an ownership chain from a TPM's EK while a DevID certificate ensures
-residency and proper key attributes.  The role of a Certificate
-Authority (CA) is to certify key residency and properties, and issuing
-DevID certificates.  CAs associated with the TPM manufacturer, OEMs,
-and device owners interact with the TPM to: (i) create the initial EK
-certificate; (ii) create an initial DevID certificate permanently
-bound to a device; and (iii) create collections of local DevID
-certificates serving as device aliases using the following procedure:
+cryptographically bound to a device. A DevID certificate represents 
+this binding. When using a TPM key for secure device identity, 
+there are restrictions on the attributes
+that it can have in order to enforce the best security practices. 
+The \verb|Sign| attribute must be set and the \verb|Decrypt| attribute not set.
+Furthermore, a DevID must have the \verb|FixedTPM| attribute set 
+because it is of paramount importance
+that it never be duplicated, transferred, or copied to another TPM.
+On the other hand, the \verb|Restricted| attribute
+is optional. When the \verb|Restricted| attribute is set, 
+such a key is called an attestation key (AK).
+This DevID gets its special name due to its unique ability 
+to prove that some object or data is
+contained within the same TPM as itself.
+
+\begin{table}[h]
+  \begin{center}
+    \footnotesize
+    \begin{tabular}{ |c|c|c|c|c|c|c| }
+      \hline
+      Key & \verb|FixedTPM| & \verb|Sign| & \verb|Decrypt| & \verb|Restricted| & Creator \\
+      \hline
+      \hline
+      EK & X &   & X & X & TPM Manufacturer \\
+      \hline
+      IAK & X & X &   & X & OEM \\
+      \hline
+      IDevID & X & X &   &   & OEM \\
+      \hline
+      LAK & X & X &   & X & Owner \\
+      \hline
+      LDevID & X & X &   &   & Owner \\
+      \hline
+    \end{tabular}
+    \caption{Attribute Requirements}
+    \label{fig:req_and_recs}
+  \end{center}
+\end{table}
+
+An AK may only sign digests produced by the TPM including TPM-internal
+structures such as platform configuration registers and keys.
+TPM-based attestation is high-integrity reporting of system
+measurements stored in platform configuration registers (PCRs).  PCRs
+store a composite of a measurement chain in a way that guarantees
+integrity. Rather than being set like a traditional register, a PCR is
+extended by concatenating a new hash to the current PCR value, hashing
+and storing the result.  Thus, a PCR captures both measurement value
+and order over an arbitrarily long measurement sequence.  An
+attestation is a PCR composite signed to guarantee integrity and
+authenticity. To tie attestation data to a specific device, the
+signing key must be an AK because it must have the \verb|Restricted| 
+attribute set and be cryptographically bound to the device.
+
+
+The acronyms DevID and AK are prefixed by the letter I or L 
+denoting initial or locally significant respectively. 
+Initial device identifiers are installed by
+OEMs in TPM-containing devices at manufacturing time.
+Initial device identifiers are the permanent identifiers of TPM-containing 
+devices and therefore are intended to be long-lived and usable for the
+lifetime of the device. Therefore these identifiers should be used
+sparingly to limit their risk of compromise.
+Locally significant device identifiers are installed by device owners
+and serve as aliases for the device. They are not expected to be long-lived 
+and may be used freely because an owner may install new ones at any time.
+
+
+% Proper TPM key creation ensures
+% an ownership chain from a TPM's EK while a DevID certificate ensures
+% residency and proper key attributes.  The role of a Certificate
+% Authority (CA) is to certify key residency and properties, and issuing
+% DevID certificates.  CAs associated with the TPM manufacturer, OEMs,
+% and device owners interact with the TPM to: (i) create the initial EK
+% certificate; (ii) create an initial DevID certificate permanently
+% bound to a device; and (iii) create collections of local DevID
+% certificates serving as device aliases using the following procedure:
+
+\begin{figure}[hbtp]
+  \centering
+  \input{key-cert-rel}
+  \caption{Keys and certificates created by CA provisioning. Labeled
+    black arrows are trust relationships formed by key creation.  Red
+    arrows denote key inclusion in certificates. Certificates are
+    labeled with their associated CS~\citep{DevIDSpec-TCG}.}
+  \label{fig:cert_rel}
+\end{figure}
+
+Trust for new DevIDs is inherited from an
+existing certificate forming a chain-of-trust from the new DevID back to
+a trust anchor~\citep{DevIDSpec-TCG}. The IAK certificate
+is the first and most important certificate to identify a device.
+Proving that an IAK belongs to a specific device requires first
+binding the IAK to a specific TPM using the EK and then binding 
+the TPM to a specific device. According to the TCG, the IAK certificate
+is intended to provide definitive evidence that a key belongs to a 
+specific device. Therefore an IAK certificate serves as the trust anchor
+and root node in a chain of DevID certificates.
+In issuing an IAK certificate, the OEM’s CA makes an assertion that is 
+a primary security dependency for the provisioning of all future DevIDs.
+All certificates in a chain identify the device represented by the
+IAK certificate.
+
+Since a key with the \verb|Restricted| attribute set has the ability
+to prove that some unknown key is loaded on the same TPM as itself,
+AK certificates are used as the requisite existing certificate in the
+provisioning of new DevIDs. This means that only IAK and LAK certificates
+are parent nodes in a chain of DevID certificates and that IDevID and
+LDevID certificates are leaf nodes. This configuration is shown in
+Figure~\ref{fig:cert_rel}.
+
+
 
 % \begin{enumerate}
 % \item\label{ite:idTPM} Manufacturers produce TPMs provisioned with an
@@ -259,56 +359,45 @@ certificates serving as device aliases using the following procedure:
 % using CAs in \ref{ite:idDevIni} and \ref{ite:idDevLoc} is the subject
 % of this work.
 
-\begin{itemize}[itemsep=0pt,parsep=0pt,partopsep=0pt]
-\item \textsf{TPM Manufacturer}: Manufacturers produce TPMs provisioned with an
-  EK certificate binding the EK to a specific TPM.
-  \begin{itemize}[itemsep=0pt,parsep=0pt,partopsep=0pt]
-  \item The EK is initialized in an immutable, shielded location
-  \item The EK certificate is generated and signed by the TPM
-    Manufacturer's CA binding the EK to the TPM.
-  \end{itemize}
-\item \textsf{OEM}: OEMs produce devices with TPMs provisioned with
-  one or more Initial DevID (IDevID) certificates that bind an Initial
-  DevID (IDevID) key to a device.
-  \begin{itemize}[itemsep=0pt,parsep=0pt,partopsep=0pt]
-  \item \textsf{A}: The Initial AK (IAK) is created and verified by
-    the OEM's CA to have correct key properties and to be loaded on
-    the same TPM as the EK.
-  \item \textsf{B}: The Initial DevID (IDevID) is created and verified
-    by the OEM's CA to have the correct key properties and to be
-    loaded on the same TPM as the IAK.
-  \item \textsf{CA Signing}: The IAK certificate and IDevID
-    certificate are signed by the OEM's CA binding the IAK and IDevID
-    to this specific device.
-  \end{itemize}
-\item \textsf{Owner}: Owners may optionally provision their TPMs with
-  one or more Local DevIDs (LDevID) certificates binding Local DevID
-  (LDevID) keys to their specific device.
-  \begin{itemize}[itemsep=0pt,parsep=0pt,partopsep=0pt]
-  \item \textsf{C}: The LAK is created and verified by the Owner's CA
-    to have the correct key properties and to be loaded on the same
-    TPM as the IAK.
-  \item \textsf{D}: The LDevID is created and verified by the Owner's
-    CA to have the correct key properties and to be loaded on the same
-    TPM as the LAK.
-  \item \textsf{CA Signing}: The LAK certificate and LDevID
-    certificate are signed by the Owner's CA binding the LAK and
-    LDevID to this specific device.
-  \end{itemize}
-\end{itemize}
+% \begin{itemize}[itemsep=0pt,parsep=0pt,partopsep=0pt]
+% \item \textsf{TPM Manufacturer}: Manufacturers produce TPMs provisioned with an
+%   EK certificate binding the EK to a specific TPM.
+%   \begin{itemize}[itemsep=0pt,parsep=0pt,partopsep=0pt]
+%   \item The EK is initialized in an immutable, shielded location
+%   \item The EK certificate is generated and signed by the TPM
+%     Manufacturer's CA binding the EK to the TPM.
+%   \end{itemize}
+% \item \textsf{OEM}: OEMs produce devices with TPMs provisioned with
+%   one or more Initial DevID (IDevID) certificates that bind an Initial
+%   DevID (IDevID) key to a device.
+%   \begin{itemize}[itemsep=0pt,parsep=0pt,partopsep=0pt]
+%   \item \textsf{A}: The Initial AK (IAK) is created and verified by
+%     the OEM's CA to have correct key properties and to be loaded on
+%     the same TPM as the EK.
+%   \item \textsf{B}: The Initial DevID (IDevID) is created and verified
+%     by the OEM's CA to have the correct key properties and to be
+%     loaded on the same TPM as the IAK.
+%   \item \textsf{CA Signing}: The IAK certificate and IDevID
+%     certificate are signed by the OEM's CA binding the IAK and IDevID
+%     to this specific device.
+%   \end{itemize}
+% \item \textsf{Owner}: Owners may optionally provision their TPMs with
+%   one or more Local DevIDs (LDevID) certificates binding Local DevID
+%   (LDevID) keys to their specific device.
+%   \begin{itemize}[itemsep=0pt,parsep=0pt,partopsep=0pt]
+%   \item \textsf{C}: The LAK is created and verified by the Owner's CA
+%     to have the correct key properties and to be loaded on the same
+%     TPM as the IAK.
+%   \item \textsf{D}: The LDevID is created and verified by the Owner's
+%     CA to have the correct key properties and to be loaded on the same
+%     TPM as the LAK.
+%   \item \textsf{CA Signing}: The LAK certificate and LDevID
+%     certificate are signed by the Owner's CA binding the LAK and
+%     LDevID to this specific device.
+%   \end{itemize}
+% \end{itemize}
 
-\noindent The resulting TPM configuration is shown in
-Figure~\ref{fig:cert_rel}.
 
-\begin{figure}[hbtp]
-  \centering
-  \input{key-cert-rel}
-  \caption{Keys and certificates created by CA provisioning. Labeled
-    black arrows are trust relationships formed by key creation.  Red
-    arrows denote key inclusion in certificates. Certificates are
-    labeled with their associated CS~\citep{DevIDSpec-TCG}.}
-  \label{fig:cert_rel}
-\end{figure}
 
 % \begin{figure}[htbp]
 %   \begin{centering}
@@ -318,24 +407,7 @@ Figure~\ref{fig:cert_rel}.
 %   \label{fig:cert_rel}
 % \end{figure}
 
-Trust for new DevIDs and DevID certificates is inherited from an
-existing TPM keys forming a chain-of-trust from the new DevID back to
-a trust anchor~\citep{DevIDSpec-TCG}. The EK identifies the TPM and
-serves as the root-of-trust.  A single Initial AK (IAK) is created
-from the EK and the OEM CA creates certificate for the IAK.  The IAK
-certificate acts as a trust anchor for the device and is the root node
-in any chain of LAK certificates on the device.  A single Initial
-DevID (IDevID) key is created from the IAK and the OEM CA creates the
-IDevID Certificate that serves as an identifier for lifetime of the
-device.
 
-Local AKs (LAKs) and LAK certificates are created from the device IAK
-or another LAK providing evidence that an LAK belongs to the same
-device.  Local DevIDs (LDevIDs) are created by users and LDevID
-certificates by the device owner's CA. LDevID certificates serve as
-aliases for the device and are the only DevIDs shared.  A single
-device may have many identifying LAKs and LDevID certificates, but
-trust for each is rooted in the IAK and transitively the EK.
 
 \section{Protocol Execution Model}
 
@@ -1260,14 +1332,14 @@ performing the second part of this process. Instead the CA fully
 trusts the OEM to have provided the correct device identifying
 information.
 
-% Even the attestation variation of the IAK provisioning procedure does
-% not attempt verification. This variation uses a quote over selected
-% PCRs to show only that the device is running the appropriate, trusted
-% firmware. All devices with the same model number have an identical
-% golden hash value that represents its expected PCR digest.  Although
-% this check guarantees that the TPM containing the IAK is on a specific
-% \textit{type} of device it does not guarantee that the TPM is on a
-% specific device.
+Even the attestation variation of the IAK provisioning procedure does
+not attempt verification. This variation uses a quote over selected
+PCRs to show only that the device is running the appropriate, trusted
+firmware. All devices with the same model number have an identical
+golden hash value that represents its expected PCR digest.  Although
+this check guarantees that the TPM containing the IAK is on a specific
+\textit{type} of device it does not guarantee that the TPM is on a
+specific device.
 
 A small change to the attestation variation of the IAK provisioning
 procedure will overcome this shortcoming. The TPM should take a
@@ -1277,11 +1349,11 @@ can be uniquely determined.  Due to measurement integrity guaranteed
 by the TPM's PCR mechanism, this modification provides definitive
 evidence that a key belongs to a specific device. A downfall of this
 solution is that it requires a large database of golden hash
-values. % Therefore, it may prove unrealistic to implement this change
-% in circumstances where a precise device identity is not
-% required. However, this solution may still be useful in
-% critical systems where it is imperative to know the identity of a
-% specific device.
+values. Therefore, it may prove unrealistic to implement this change
+in circumstances where a precise device identity is not
+required. However, this solution may still be useful in
+critical systems where it is imperative to know the identity of a
+specific device.
 %
 %
 %
