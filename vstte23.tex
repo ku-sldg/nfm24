@@ -294,7 +294,7 @@ identifiers should be used sparingly to limit their risk of
 compromise.  Locally significant device identifiers are installed by
 device owners and serve as aliases for the device. They need not be
 long-lived, may be created and installed at any time, and shared
-externally as appropriate for applications.
+externally as appropriate for specific applications.
 
 % Proper TPM key creation ensures
 % an ownership chain from a TPM's EK while a DevID certificate ensures
@@ -410,9 +410,13 @@ Figure~\ref{fig:cert_rel}.
 
 \section{Protocol Execution Model}
 
-We use a labeled transition system to model abstract command execution.
-DevID-provisioning protocols are modeled as sequences
-of instructions executed by the CA and by the OEM or Owner.
+We use a labeled transition system to model abstract TPM and TSS
+command execution.  State is represented as a collection of objects
+installed in the TPM while transitions perform operations over state
+as defined by commands.  Labels represent commands and thus label
+sequences represent protocols.  DevID-provisioning protocols are
+modeled as sequences of state transformations corresponding with
+commands executed by the CA and by the OEM or Owner.
 
 \subsection{Keys and Certificates}
 
