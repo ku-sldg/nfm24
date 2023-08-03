@@ -233,20 +233,17 @@ provisioning of TPM-based device identity.
 % DevID certificates.
 
 A secure device identifier (DevID) is a TPM key that is
-cryptographically bound to a device. A DevID certificate represents 
-this binding. When using a TPM key for secure device identity, 
-there are restrictions on the attributes
-that it can have in order to enforce the best security practices. 
-The \verb|Sign| attribute must be set and the \verb|Decrypt| attribute not set.
-Furthermore, a DevID must have the \verb|FixedTPM| attribute set 
-because it is of paramount importance
-that it never be duplicated, transferred, or copied to another TPM.
-On the other hand, the \verb|Restricted| attribute
-is optional. When the \verb|Restricted| attribute is set, 
-such a key is called an attestation key (AK).
-This DevID gets its special name due to its unique ability 
-to prove that some object or data is
-contained within the same TPM as itself.
+cryptographically bound to a device. A DevID certificate represents
+this binding. When using a TPM key for secure device identity,
+restrictions on attributes enforce best security practices.  The
+\verb|Sign| attribute must be set and the \verb|Decrypt| attribute not
+set to indicate the key is a signing key.  Critically, a DevID must
+have the \verb|FixedTPM| attribute set to ensure it will never be
+duplicated, transferred, or copied to another TPM.  The
+\verb|Restricted| attribute is optional. When the \verb|Restricted|
+attribute is set the key becomes an attestation key (AK).  This DevID
+is so named due to its unique ability to prove that some object is
+contained in the same TPM as itself.
 
 \begin{table}[h]
   \begin{center}
