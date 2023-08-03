@@ -284,18 +284,17 @@ signing key must be an AK because it must have the \verb|Restricted|
 attribute set and be cryptographically bound to the device.
 
 
-The acronyms DevID and AK are prefixed by the letter I or L 
-denoting initial or locally significant respectively. 
-Initial device identifiers are installed by
-OEMs in TPM-containing devices at manufacturing time.
-Initial device identifiers are the permanent identifiers of TPM-containing 
-devices and therefore are intended to be long-lived and usable for the
-lifetime of the device. Therefore these identifiers should be used
-sparingly to limit their risk of compromise.
-Locally significant device identifiers are installed by device owners
-and serve as aliases for the device. They are not expected to be long-lived 
-and may be used freely because an owner may install new ones at any time.
-
+The acronyms DevID and AK are prefixed by the letter I or L denoting
+initial or locally significant respectively.  Initial device
+identifiers are installed by OEMs in TPM-containing devices at
+manufacturing time.  Initial device identifiers are the permanent
+identifiers of TPM-containing devices and therefore are intended to be
+long-lived and usable for the lifetime of the device. Therefore these
+identifiers should be used sparingly to limit their risk of
+compromise.  Locally significant device identifiers are installed by
+device owners and serve as aliases for the device. They need not be
+long-lived, may be created and installed at any time, and shared
+externally as appropriate for applications.
 
 % Proper TPM key creation ensures
 % an ownership chain from a TPM's EK while a DevID certificate ensures
