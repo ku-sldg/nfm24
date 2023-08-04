@@ -57,7 +57,7 @@ Perry Alexander}
 %
 \begin{abstract}
   Provisioning of TPM-based secure device identifiers must be verified
-  to ensure such identifiers are strongly bound to their associated
+  to ensure such identifiers are strongly bound to their
   devices.  Lack of such assurances calls into question the integrity
   of decisions that rely upon associating data with devices.  We
   developed models of two TCG provisioning protocols and verified they
@@ -111,8 +111,8 @@ key to be resident in a specific device's
 TPM~\citep{DevIDSpec-TCG}. These protocols are performed by a trusted
 Certificate Authority (CA) in communication with a
 certificate-requesting device and maintain a cryptographic evidentiary
-chain linking a DevID to a specific TPM \citep{DevIDSpec-TCG}.  For
-each provisioning procedure, the TCG outlines a protocol for the CA
+chain linking a DevID to a specific TPM-containing device \citep{DevIDSpec-TCG}.  
+For each provisioning procedure, the TCG outlines a protocol for the CA
 and the certificate-requesting entity. Furthermore, the TCG claims
 that each protocol provides certain assurances. These assurances are
 the basis for the resulting cryptographic evidentiary chain.  Each
@@ -129,13 +129,13 @@ device appraisal requires strong identification of an attestation
 source. Specifically, that the signing key for attestation is bound to
 the attestation manager responsible for attestation.  Formal
 verification is required for integration into our formally
-verified/synthesize attestation
-environment\citep{petz2022innovations}.  Our contributions include:
-(i) the design and implementation of an abstract formal model of
-command execution; (ii) a formal analysis of two TCG-provided key
-certification protocols; and (iii) the discovery of a potential
-shortcoming of the IAK provisioning procedure and a recommendation for
-its improvement.
+verified/synthesized attestation
+environment\citep{petz2022innovations}.  
+Our contributions of this research include: (i) design and implementation
+of an abstract formal model of TPM command execution; (ii) an in-depth
+analysis of the TCG-provided IAK and LAK certification protocols,
+and (iii) a recommendation for clarifying the IAK provisioning
+procedure.
 
 \section{Related Work}
 The Privacy CA protocol for the TPM 1.2 has been extensively studied
@@ -1352,7 +1352,7 @@ device.
 
 Contributions of this research include: (i) design and implementation
 of an abstract formal model of TPM command execution; (ii) an in-depth
-analysis of the TCG-provided IAK and LAK key certification protocols,
+analysis of the TCG-provided IAK and LAK certification protocols,
 and (iii) a recommendation for clarifying the IAK provisioning
 procedure.  To perform this verification we used two primary proof
 techniques.  The first uses a minimal initial state to ensure key
