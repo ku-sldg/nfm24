@@ -1360,17 +1360,17 @@ analysis of the TCG-provided IAK and LAK certification protocols,
 and (iii) a recommendation for clarifying the IAK provisioning
 procedure.  To perform this verification we used two primary proof
 techniques.  The first uses a minimal initial state to ensure key
-residency while the second uses a command supersequence to model
-construction of a certificate request.
+residency while the second uses a command supersequence to characterize
+arbitrary construction of a certificate request.
 
 This work is motivated by the need for strong identifiers in
 performing layered remote
 attestation~\cite{Coker::Principles-of-R,Ramsdell:2019aa,helble2021flexible}.
 It is essential that an attestation result be strongly bound to the
-attestation manager that produced it. LDevID certification makes them
-ideal for identifying attestation managers and providing signing keys
-for attestation results.  Verification results reported here allow
-safe integration of LDevIDs into our verified attestation tool
+attestation manager that produced it. LAKs are
+ideal for identifying attestation managers and providing a secure
+method for signing attestation results.  Verification results reported here allow
+safe integration of LAKs into our verified attestation tool
 suite~\cite{petz2022innovations}.
 
 Further improvements are necessary should we choose to extend our
