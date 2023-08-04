@@ -440,7 +440,7 @@ Certificates are defined by the inductive type \verb|signedCert|
 consisting of a public key, an identifier, and a private key. The
 identifier represents the certificate's Subject field and may include
 information describing either the TPM or the device. The private key
-parameter denotes the key that performed the signature over the
+parameter denotes the CA's key that performed the signature over the
 certificate.
 
 % \begin{lstlisting}[language=Coq]
@@ -542,7 +542,7 @@ Inductive command : Type :=
 | MakePair : message -> message -> command.
 \end{lstlisting}
 \end{footnotesize}
-\caption{Command data structure.}
+\caption{Command Data Structure}
 \label{fig:command-model}
 \end{figure}
 
@@ -587,7 +587,6 @@ cryptographic name of a key to be credentialed; a secret; and a public
 EK. % The cryptographic name of a key is produced by hashing its public
 % area with its associated hash algorithm and prepending the Algorithm
 % ID of the hashing algorithm.
-
 The \verb|TPM2_ActivateCredential| command is used by the recipient of
 an encrypted credential blob to release its secret.  The secret
 contained in an encrypted credential blob is only released if the
@@ -600,12 +599,12 @@ to validate the result.
 
 The \verb|MakeCSR_IDevID| command produces a \verb|TCG_CSR_IDevID|
 structure.  A \verb|TCG_CSR_IDevID| is a certificate signing request
-(CSR) that contains the data required to couple an IAK to a
-TPM-containing device.  In particular, this structure is used any time
+(CSR) that contains the data required to couple an initial DevID to a
+TPM-containing device.  This structure is used any time
 a provisioning procedure uses the EK certificate.  The
 \verb|MakeCSR_LDevID| command is similar except that it produces a
 \verb|TCG_CSR_LDevID| structure that includes the certification
-information for an LAK or LDevID.
+information for a locally significant DevID.
 
 % The \verb|CheckCert| command verifies a signature over a certificate
 % against a public key. One should check an EK certificate against the
