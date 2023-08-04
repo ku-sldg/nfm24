@@ -268,7 +268,7 @@ prove that a data object is contained in the same TPM as itself.
       LDevID & X & X &   &   & Owner \\
       \hline
     \end{tabular}
-    \caption{Attribute Requirements}
+    \caption{EK and DevID Attribute Requirements}
     \label{fig:req_and_recs}
   \end{center}
 \end{table}
@@ -313,9 +313,9 @@ and shared externally.
   \centering
   \input{key-cert-rel}
   \caption{Keys and certificates created by CA provisioning. Labeled
-    black arrows are trust relationships formed by key creation.  Red
+    black arrows are trust relationships.  Red
     arrows denote key inclusion in certificates. Certificates are
-    labeled with their associated CS~\citep{DevIDSpec-TCG}.}
+    labeled with their associated CA~\citep{DevIDSpec-TCG}.}
   \label{fig:cert_rel}
 \end{figure}
 
@@ -336,7 +336,7 @@ the IAK certificate.
 
 Since a key with the \verb|Restricted| attribute set has the ability
 to prove that some unknown key is loaded on the same TPM as itself, AK
-certificates are used as the existing, TPM-resident certificate in the
+certificates are used as the existing certificate in the
 provisioning of new DevIDs. This means that only IAK and LAK
 certificates are parent nodes in a chain of DevID certificates and
 that IDevID and LDevID certificates are leaf nodes. A basic AK and
