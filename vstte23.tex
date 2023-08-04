@@ -57,36 +57,14 @@ Perry Alexander}
 %
 \begin{abstract}
   Provisioning of TPM-based secure device identifiers must be verified
-  to ensure such identifiers are strongly bound to their
-  devices.  Lack of such assurances calls into question the integrity
-  of decisions that rely upon associating data with devices.  We
-  developed models of two TCG provisioning protocols and verified they
-  provide the assurances necessary to produce a cryptographic binding
-  of TPM key to device.
-  % guarantee the properties necessary to produce a cryptographic 
-  % binding of TPM key to device.
-  % We developed and verified two models of TCG provisioning protocols 
-  % resulting in assurance that secure identifiers are created from a 
-  % properly provisioned TPM.  
-  As a result we can be assured that device
-  identifiers are verifiably bound to their associated devices.
-% \begin{abstract}
-%   A secure device identifier (DevID) is an identifier that is
-%   cryptographically bound to a device. Trusted Platform Module (TPM)
-%   keys are an ideal choice for implementation of these identifiers.
-%   The specification ``TPM 2.0 Keys for Device Identity and
-%   Attestation'' by the Trusted Computing Group (TCG) describes several
-%   procedures for remotely proving a key to be resident in a specific
-%   device's TPM and thereby satisfying the requirements for a
-%   DevID. These procedures are carefully constructed protocols that are
-%   intended to be performed by a trusted Certificate Authority (CA) in
-%   communication with a certificate-requesting device and are designed
-%   to maintain a cryptographic evidentiary chain linking a DevID to a
-%   specific TPM. The TCG claims that each protocol provides certain
-%   assurances; these assurances are the basis for the resulting
-%   cryptographic evidentiary chain.  We aim to determine the
-%   correctness of key certification protocols by abstractly modeling
-%   and formally verifying their properties.
+  to ensure such identifiers are strongly bound to their devices.
+  Lack of such assurance jeopardizes high-integrity decisions and
+  reporting that rely upon associating data with devices.  We develop
+  models of two TCG provisioning protocols and verified they provide
+  the assurances necessary to produce a strong cryptographic binding
+  of TPM key to device.  As a result we can be assured that initial
+  and local device identifiers are strongly bound to their associated
+  devices.
 
 \keywords{Secure Device Identifiers \and TPM \and Verification.}
 \end{abstract}
@@ -249,7 +227,7 @@ optional. When the \verb|Restricted| attribute is set the key becomes
 an attestation key (AK).  The AK is so named for its unique ability to
 prove that a data object is contained in the same TPM as itself.
 
-\begin{table}[h]
+\begin{table}[hbtp]
   \begin{center}
     \footnotesize
     \begin{tabular}{ |c|c|c|c|c|c|c| }
@@ -275,17 +253,18 @@ prove that a data object is contained in the same TPM as itself.
 
 An AK may only sign objects produced by the TPM. This includes
 TPM-internal structures such as platform configuration registers,
-digests, and keys.  TPM-based attestation is high-integrity reporting
-of system measurements stored in platform configuration registers
-(PCRs).  PCRs store a measurement chain composite in a way that
-guarantees integrity. Rather than being set like a traditional
+digests, and keys.  TPM-based attestation involves high-integrity reporting
+of system measurements stored in the TPM's platform configuration
+registers (PCRs).  PCRs store a measurement chain composite in a way
+that guarantees integrity. Rather than being set like a traditional
 register, a PCR is extended by concatenating a new hash to the current
 PCR value, hashing and storing the result.  Thus, a PCR captures both
 measurement value and order over an arbitrarily long measurement
 sequence.  A TPM attestation is called a quote and minimally consists
 of a PCR composite signed to guarantee integrity and authenticity. To
 tie attestation data to a specific device, the signing key must be an
-AK. An AK's \verb|Restricted| attribute and associated certificate results in cryptographic binding of signatures to a specific device.
+AK. An AK's \verb|Restricted| attribute and associated certificate
+results in cryptographic binding of signatures to a specific device.
 
 The acronyms DevID and AK are prefixed by the letter I or L denoting
 initial or locally significant respectively.  Initial device
@@ -476,13 +455,13 @@ Inductive message : Type :=
 | signedCertificate : signedCert -> message
 | pair : message -> message -> message.
 \end{lstlisting}
-\caption{Message Model}
+\caption{TPM Message Model}
 \label{fig:message-model}
 \end{figure}
 
 An entity may derive additional messages from a collection of known
 messages.  For example, given a message of the form
-\verb|signature m k|, the message \verb|m| may be deduced. Whereas
+\verb|signature m k|, \verb|m| may be deduced while
 given a message in the form \verb|encryptedCredential n g k|, no
 messages may be deduced.  Message inference is modeled in two
 equivalent ways: (i) a recursive function \verb|inferFrom|; and (ii)
@@ -542,7 +521,7 @@ Inductive command : Type :=
 | MakePair : message -> message -> command.
 \end{lstlisting}
 \end{footnotesize}
-\caption{Command Data Structure}
+\caption{TPM Command Data Structure}
 \label{fig:command-model}
 \end{figure}
 
@@ -642,7 +621,7 @@ Inductive seq_execute : tpm_state * state -> sequence -> tpm_state * state -> Pr
     seq_execute ini (Sequence c s) fin
 | SE_Done : forall ini, seq_execute ini Done ini.
 \end{lstlisting}
-\caption{Command Sequence Model}
+\caption{Sequential command execution model}
 \label{fig:command-sequence-model}
 \end{figure}
 
@@ -761,7 +740,7 @@ Definition arbitrary_CSR_production (steps_CA : message -> Prop) : Prop :=
   In csr fin ->
   steps_CA csr.
   \end{lstlisting}
-  \caption{Arbitrary CSR Production}
+  \caption{Arbitrary CSR production definition.}
   \label{fig:csr-production}
 \end{figure}
 
@@ -836,7 +815,7 @@ the Chain of Trust line C in Figure \ref{fig:cert_rel}.
   % \end{enumerate}
   \item If all checks succeed, the CA issues the LAK certificate to the Owner
   \end{enumerate}
-  \caption{LAK Certificate Creation}
+  \caption{LAK Certificate Creation Protocol}
   \label{fig:lak-certificate-creation}
 \end{figure}
 
@@ -891,7 +870,8 @@ corresponds with exactly one command in the model, namely
 Definition steps1to5_Owner : sequence :=
 TPM2_Certify pubLAK privIAK
 ;; MakeCSR_LDevID (signature (TPM2B_Attest pubLAK) privIAK) certIAK
-;; TPM2_Hash (TCG_CSR_LDevID (signature (TPM2B_Attest pubLAK) privIAK) certIAK)
+;; TPM2_Hash
+    (TCG_CSR_LDevID (signature (TPM2B_Attest pubLAK) privIAK) certIAK)
 ;; TPM2_Sign 
     (hash (TCG_CSR_LDevID (signature (TPM2B_Attest pubLAK) privIAK) certIAK))
     privLAK
@@ -920,7 +900,8 @@ within proof statements.
 
 \begin{figure}[hpbt]
 \begin{lstlisting}[language=Coq]
-Definition steps_CA (msg : message) (iak lak : pubKey) (cert : signedCert) : Prop :=
+Definition steps_CA (msg : message) (iak lak : pubKey) (cert : signedCert)
+ : Prop :=
   match msg with
   | (pair (TCG_CSR_LDevID (signature (TPM2B_Attest k) k0') (Cert k0 id k_ca'))
           (signature m k')) =>
@@ -1133,7 +1114,7 @@ the Proof of Residency line A in Figure \ref{fig:cert_rel}.
   \item The CA checks the returned nonce against the one generated in Step 6b
   \item If the check succeeds, the CA issues the IAK certificate to the OEM
   \end{enumerate}
-  \caption{IAK Certificate Creation}
+  \caption{IAK Certificate Creation Protocol}
   \label{fig:iak-creation}
 \end{figure}
 
@@ -1367,10 +1348,10 @@ This work is motivated by the need for strong identifiers in
 performing layered remote
 attestation~\cite{Coker::Principles-of-R,Ramsdell:2019aa,helble2021flexible}.
 It is essential that an attestation result be strongly bound to the
-attestation manager that produced it. LAKs are
-ideal for identifying attestation managers and providing a secure
-method for signing attestation results.  Verification results reported here allow
-safe integration of LAKs into our verified attestation tool
+attestation manager that produced it. LAKs are ideal for identifying
+attestation managers and providing a secure method for signing
+attestation results.  Verification results reported here allow safe
+integration of LAKs into our verified attestation tool
 suite~\cite{petz2022innovations}.
 
 Further improvements are necessary should we choose to extend our
