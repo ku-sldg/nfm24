@@ -58,11 +58,11 @@ Perry Alexander}
 \begin{abstract}
   Provisioning of TPM-based secure device identifiers must be verified
   to ensure such identifiers are strongly bound to their associated
-  devices.  Appraising attestation results without such assurances
-  calls into question the integrity of trust decisions.  
-  We developed models of two TCG provisioning protocols and verified
-  they provide the assurances necessary to produce a cryptographic 
-  binding of TPM key to device.
+  devices.  Lack of such assurances calls into question the integrity
+  of decisions that rely upon associating data with devices.  We
+  developed models of two TCG provisioning protocols and verified they
+  provide the assurances necessary to produce a cryptographic binding
+  of TPM key to device.
   % guarantee the properties necessary to produce a cryptographic 
   % binding of TPM key to device.
   % We developed and verified two models of TCG provisioning protocols 
@@ -1312,15 +1312,15 @@ performed by the CA, Assurance B is guaranteed by the EK's
 blob, and Assurance C is guaranteed by the signature check on the EK
 certificate performed by the CA.
 
-Our analysis revealed a potential weakness in how the IAK provisioning
-procedure is described. The procedure provides no assurance regarding
-IAK device-residency as implied by its definition.  The IAK
-certificate is intended to provide evidence that a key belongs to a
-specific device, yet the procedure makes no guarantees that the IAK is
-actually on the device.  Proving an IAK belongs to a specific device
-requires first binding the IAK to a specific TPM using the EK and then
-binding the TPM to a specific device \citep{DevIDSpec-TCG}.  However,
-the CA makes no attempt at performing the second part of this
+Our analysis revealed a potential inconsistency in how the IAK
+provisioning procedure is described. The procedure provides no
+assurance regarding IAK device-residency as implied by its definition.
+The IAK certificate is intended to provide evidence that a key belongs
+to a specific device, yet the procedure makes no guarantees that the
+IAK is actually on the device.  Proving an IAK belongs to a specific
+device requires first binding the IAK to a specific TPM using the EK
+and then binding the TPM to a specific device \citep{DevIDSpec-TCG}.
+However, the CA makes no attempt at performing the second part of this
 process. Instead the CA fully trusts the OEM to have provided the
 correct device identifying information.
 
@@ -1350,25 +1350,44 @@ device.
 %
 \section{Conclusions and Future Work}
 
-Major contributions of this research are summarized as: (i) the design
-and implementation of an abstract formal model of command execution;
-(ii) an in-depth analysis of two TCG-provided key certification
-protocols, and (iii) the discovery of a potential shortcoming ing the
-IAK provisioning procedure and a recommendation for its improvement.
+Contributions of this research include: (i) design and implementation
+of an abstract formal model of TPM command execution; (ii) an in-depth
+analysis of the TCG-provided IAK and LAK key certification protocols,
+and (iii) a recommendation for clarifying the IAK provisioning
+procedure.  To perform this verification we used two primary proof
+techniques.  The first uses a minimal initial state to ensure key
+residency while the second uses a command supersequence to model
+construction of a certificate request.
 
-Further improvements are necessary to extend applicability to a
-broader range of problems. An initial step is expanding the command
-library to include the TPM commands necessary for modeling the
-attestation variation of these provisioning protocols. The
-attestation variations use PCRs to inform a remote CA of the internal
-state of a certificate--requesting entity. This variation is strongly
-encouraged during IAK certification to assure the CA it is issuing a
-certificate to a device running trusted software.  To include
-necessary PCR--related commands, the structure of abstract state
-should be modified from a pair to a record similar to that of the work
-of \citet{PrivacyCAAnalysis-Hall}. These advancements to the model
-also provide the mechanisms necessary to verify our recommended changes to
-the IAK provisioning procedure.
+This work is motivated by the need for strong identifiers in
+performing layered remote
+attestation~\cite{Coker::Principles-of-R,Ramsdell:2019aa,helble2021flexible}.
+It is essential that an attestation result be strongly bound to the
+attestation manager that produced it. LDevID certification makes them
+ideal for identifying attestation managers and providing signing keys
+for attestation results.  Verification results reported here allow
+safe integration of LDevIDs into our verified attestation tool
+suite~\cite{petz2022innovations}.
+
+Further improvements are necessary should we choose to extend our
+approach to a broader range of DevID protocols.  An initial step would
+expand the command library to include additional TPM and TSS commands
+necessary for modeling the attestation variation of both provisioning
+protocols. The attestation variations use PCRs to inform a remote CA
+of the internal state of a certificate-requesting entity. This
+variation is strongly encouraged during IAK certification to assure
+the CA it is issuing a certificate to a device running trusted
+software.  It also contributes to our overall attestation goal.  To
+include necessary PCR-related commands, the structure of abstract
+state should be modified from a pair to a record similar to that of
+the work of \citet{PrivacyCAAnalysis-Hall}. These advancements to the
+model also provide the mechanisms necessary to verify our recommended
+changes to the IAK provisioning procedure.
+
+\medskip
+
+\noindent All verification models and \LaTeX\ source associated with
+this work may be found at \url{git@github.com:ku-sldg/vstte23.git}.
 
 % 
 % 
