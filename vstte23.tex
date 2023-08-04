@@ -139,44 +139,47 @@ its improvement.
 
 \section{Related Work}
 The Privacy CA protocol for the TPM 1.2 has been extensively studied
-using various formal methods. The Privacy CA protocol was replaced by
-the Direct Anonymous Attestation (DAA) scheme in the TPM 2.0. Both of
-these protocols aim to accomplish the same fundamental purpose: allow
-remote authentication of a device while maintaining its
-anonymity. These protocols differ from the key certification protocols
-analyzed in our work which aim to provide individual identification of
-a device.  The work of~\citet{PrivacyCAAnalysis-Chen} analyzes the
-Privacy CA protocol in the presence of an adversary. They suggest a
-small modification to the protocol that enhances its security without
-changing the existing functionality of the TPM 1.2. Our work similarly
-suggests a small modification to the IAK provisioning procedure which
-requires no change to the existing functionality of the TPM 2.0.  On
-the other hand, the work of~\citet{PrivacyCAAnalysis-Hall,TPM12Model}
-analyzes the Privacy CA protocol but does not consider any specific
+using various formal methods.  The work
+of~\citet{PrivacyCAAnalysis-Chen} analyzes the Privacy CA protocol in
+the presence of an adversary. They suggest a small modification to the
+protocol that enhances its security without changing the existing
+functionality of the TPM 1.2. Our work similarly suggests a small
+modification to the IAK provisioning procedure which requires no
+change to the existing functionality of the TPM 2.0.  In contrast,
+earlier work of~\citet{PrivacyCAAnalysis-Hall,TPM12Model} analyzes the
+Privacy CA protocol but does not consider any specific
 adversary. Instead, they consider the functional correctness of the
 protocol and specifically examine the protocol implementation to
-ensure that it produces the results that it should.  Our work has many
-parallels to the works of~\citeauthor{PrivacyCAAnalysis-Hall}.  We
-attempt to determine whether the implementations of certain key
-certification protocols result in the assurances that they should.
+ensure that it produces correct results.  Our current work has many
+parallels to earlier work from~\citeauthor{PrivacyCAAnalysis-Hall}.
+Here we attempt to determine whether the implementations of certain
+key certification protocols result in the assurances that they should.
 Furthermore,~\citeauthor{PrivacyCAAnalysis-Hall} abstractly model a
 large subset of the TPM 1.2 commands in the PVS specification
 language. They model TPM command execution as a transition system over
-an abstract system state. We implement this same technique in our own
-work but over a small subset of TPM 2.0 commands as well as several
-non-TPM commands.
+an abstract system state using a monadic approach. Here we implement a
+state transition system directly over a smaller subset of TPM 2.0
+commands and non-TPM commands targeted to device identifiers.
 
-The works of~\citet{DAAAnalysis-Whit} and~\citet{DAAAnalysis-Wes}
-thoroughly study the DAA scheme of the TPM 2.0. Collectively, they
-develop a symbolic model, a C++ implementation, and a
-formally-verified fix of the scheme.  Many other works use formal
-methods to examine other aspects of both the TPM 1.2
-\citep{AuthAnalysis,PCRAnalysis} and 2.0
-\citep{EAAnalysis,HMACAnalysis}.  These aspects include
-authentication, platform configuration registers (PCRs), enhanced
-authorization (EA), and hash-based message authentication code (HMAC)
-mechanisms. They utilize tools and techniques such as SAPIC, Tamarin,
-stateful applied pi calculus, amongst others.
+The TPM 1.2 Privacy CA protocol was replaced by the Direct Anonymous
+Attestation (DAA) scheme in the TPM 2.0.  The work
+of~\citet{DAAAnalysis-Whit} and~\citet{DAAAnalysis-Wes} thoroughly
+study the TPM 2.0 DAA scheme. Collectively, they develop a symbolic
+model, a C++ implementation, and a formally-verified fix of the
+scheme. Both the Privacy CA and DAA protocols aim to allow remote
+authentication of a device while maintaining its anonymity. As such
+these protocols differ from the key certification protocols analyzed
+here that provide individual device identification.
+
+Other work uses formal techniques to examine various aspects of both
+the TPM 1.2~\citep{AuthAnalysis,PCRAnalysis} and
+2.0~\citep{EAAnalysis,HMACAnalysis}.  These include analyzing
+authentication~\citep{AuthAnalysis}, platform configuration registers
+(PCRs)~\citep{PCRAnalysis}, enhanced
+authorization~\citep{EAAnalysis}, and hash-based message
+authentication code (HMAC) mechanisms~\citep{HMACAnalysis}. They
+utilize tools and techniques such as SAPIC~\citep{kremer2016automated}, Tamarin~\citep{meier2013tamarin}, and stateful
+applied pi calculus~\citep{Milner:99:Communicating-a}, amongst others.
 %
 %
 %
