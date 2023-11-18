@@ -1,0 +1,10 @@
+DevID
+DevIDs
+IAK
+HMAC
+PCRs
+TPMs
+NVRAM
+IDevID
+LDevID
+nonces

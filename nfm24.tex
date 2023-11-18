@@ -1,7 +1,3 @@
-% This is samplepaper.tex, a sample chapter demonstrating the
-% LLNCS macro package for Springer Computer Science proceedings;
-% Version 2.20 of 2017/10/04
-%
 \documentclass[runningheads]{llncs}
 %
 \usepackage{graphicx}
@@ -66,7 +62,7 @@ Perry Alexander}
   and local device identifiers are strongly bound to their associated
   devices.
 
-\keywords{Secure Device Identifiers \and TPM \and Verification.}
+  \keywords{Secure Device Identifiers \and TPM \and Verification.}
 \end{abstract}
 %
 %
@@ -84,36 +80,32 @@ Storage and Reporting, a TPM provides the necessary
 protections for generating and storing DevIDs with suitable integrity
 guarantees.
 
-The Trusted Computing Group (TCG) describes protocols for assuring a
-key to be resident in a specific device's
-TPM~\citep{DevIDSpec-TCG}. These protocols are performed by a trusted
-Certificate Authority (CA) in communication with a
-certificate-requesting device and maintain a cryptographic evidentiary
-chain linking a DevID to a specific TPM-containing device \citep{DevIDSpec-TCG}.  
-For each provisioning procedure, the TCG outlines a protocol for the CA
-and the certificate-requesting entity. Furthermore, the TCG claims
-that each protocol provides certain assurances. These assurances are
-the basis for the resulting cryptographic evidentiary chain.  Each
-assurance manifests as an assertion regarding either TPM-residency,
-key attributes, or previously-issued certificates.
+The Trusted Computing Group (TCG) describes protocols for assuring a key to be
+resident in a specific device's TPM~\citep{DevIDSpec-TCG}. These protocols are
+performed by a trusted Certificate Authority (CA) in communication with a
+certificate-requesting device and maintain a cryptographic evidentiary chain
+linking a DevID to a specific TPM-containing device \citep{DevIDSpec-TCG}.  
+For each provisioning procedure, the TCG outlines a protocol for the CA and the
+certificate-requesting entity. Furthermore, the TCG claims that each protocol
+provides certain assurances. These assurances are the basis for the resulting
+cryptographic evidentiary chain.  Each assurance manifests as an assertion
+regarding either TPM-residency, key attributes, or previously-issued
+certificates.
 
-Our work examines correctness of two key certification protocols: (i)
-OEM Creation of an IAK Certificate based on an EK Certificate; and
-(ii) Owner Creation of an LAK Certificate based on an IAK
-Certificate. These DevID establishment protocols are essential for our
-work in remote
-attestation~\citep{Coker::Principles-of-R,petz2022innovations} where
-device appraisal requires strong identification of an attestation
-source. Specifically, that the signing key for attestation is bound to
-the attestation manager responsible for attestation.  Formal
-verification is required for integration into our formally
-verified/synthesized attestation
-environment\citep{petz2022innovations}.  
-Our contributions of this research include: (i) design and implementation
-of an abstract formal model of TPM command execution; (ii) an in-depth
-analysis of the TCG-provided IAK and LAK certification protocols,
-and (iii) a recommendation for clarifying the IAK provisioning
-procedure.
+Our work examines correctness of two key certification protocols: (i) OEM
+Creation of an IAK Certificate based on an EK Certificate; and (ii) Owner
+Creation of an LAK Certificate based on an IAK Certificate. These DevID
+establishment protocols are essential for our work in remote
+attestation~\citep{Coker::Principles-of-R,petz2022innovations} where device
+appraisal requires strong identification of an attestation source. Specifically,
+that the signing key for attestation is bound to the attestation manager
+responsible for attestation.  Formal verification is required for integration
+into our formally verified/synthesized attestation
+environment~\citep{petz2022innovations}.  Our contributions of this research
+include: (i) design and implementation of an abstract formal model of TPM
+command execution; (ii) an in-depth analysis of the TCG-provided IAK and LAK
+certification protocols, and (iii) a recommendation for clarifying the IAK
+provisioning procedure.
 
 \section{Related Work}
 The Privacy CA protocol for the TPM 1.2 has been extensively studied

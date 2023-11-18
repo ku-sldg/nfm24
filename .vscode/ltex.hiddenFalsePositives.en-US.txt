@@ -1,0 +1,2 @@
+{"rule":"THE_SUPERLATIVE","sentence":"^\\QWhen using a TPM key for secure device identity, restrictions on attributes enforce best security practices.\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_US","sentence":"^\\QThey utilize tools and techniques such as SAPIC \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q, Tamarin \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q, and stateful applied pi calculus \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q, amongst others.\\E$"}
