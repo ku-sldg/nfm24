@@ -52,12 +52,12 @@ Perry Alexander}
 \maketitle              % typeset the header of the contribution
 %
 \begin{abstract}
-  Provisioning of TPM-based secure device identifiers must be verified
+  Provisioning TPM-based secure device identifiers must be verified
   to ensure such identifiers are strongly bound to their devices.
   Lack of such assurance jeopardizes high-integrity decisions and
   reporting that rely upon associating data with devices.  We develop
-  models of two TCG provisioning protocols and verified they provide
-  the assurances necessary to produce a strong cryptographic binding
+  models of two TCG provisioning protocols and verify they provide
+  assurances necessary to produce a strong cryptographic binding
   of TPM key to device.  As a result we can be assured that initial
   and local device identifiers are strongly bound to their associated
   devices.
@@ -386,7 +386,7 @@ We use a labeled transition system to model abstract TPM and TSS
 command execution.  State is represented as a collection of objects
 installed in the TPM while transitions perform operations over state
 as defined by commands.  Labels represent individual commands and
-label sequences represent protocols.  DevID-provisioning protocols are
+label sequences represent protocols.  DevID provisioning protocols are
 modeled as sequences of state transformations corresponding with
 commands executed by the CA and the OEM or Owner.
 
@@ -797,7 +797,7 @@ the Chain of Trust line C in Figure \ref{fig:cert_rel}.
   \item The Owner takes a signature hash of the CSR
   \item The Owner signs the resulting hash digest with the LAK
   \item The Owner sends the CSR paired with the signed hash to the CA
-  \item The CA verifies the recieved data% by checking:
+  \item The CA verifies the received data% by checking:
   % \begin{enumerate}[topsep=0pt, itemsep=0pt,parsep=0pt,partopsep=0pt]
   %   \item The hash digest against the CSR
   %   \item The signature on the hash digest with the public LAK
