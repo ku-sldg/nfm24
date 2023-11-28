@@ -6,24 +6,24 @@
   label/.style={rectangle,font=\rmfamily,minimum height=5mm,minimum width=10mm}]
 
   \node[key] (EK) {EK};
-  \node[key] (IAK) [node distance=2.5cm, right of=EK] {IAK};
+  \node[key] (IAK) [node distance=2cm, below of=EK] {IAK};
   \node[key] (IDevID) [node distance=2.5cm, right of=IAK] {IDevID};
-  \node[key] (LDevID) [node distance=2.5cm, below of=IDevID] {LDevID};
-  \node[cert] (EKC) [node distance=1cm,below of=EK] {EK Cert};
-  \node[cert] (IAKC) [node distance=1cm,above of=IAK] {IAK Cert};
-  \node[cert] (IDevIDC) [node distance=1cm,below of=IDevID] {IDevID Cert};
-  \node[key] (LAK) [node distance=2.5cm,below of=IAK] {LAK};
-  \node[cert] (LAKC) [node distance=1cm,below of=LAK] {LAK Cert};
-  \node[cert] (LDevIDC) [node distance=1cm,below of=LDevID] {LDevID Cert};
+  \node[key] (LDevID) [node distance=2cm, below of=IDevID] {LDevID};
+  \node[cert] (EKC) [node distance=2cm,left of=EK] {EK Cert};
+  \node[cert] (IAKC) [node distance=2cm,left of=IAK] {IAK Cert};
+  \node[cert] (IDevIDC) [node distance=2.2cm,right of=IDevID] {IDevID Cert};
+  \node[key] (LAK) [node distance=2cm,below of=IAK] {LAK};
+  \node[cert] (LAKC) [node distance=2cm,left of=LAK] {LAK Cert};
+  \node[cert] (LDevIDC) [node distance=2.2cm,right of=LDevID] {LDevID Cert};
   \node[label] (ManCA) [node distance=1.75cm,left of=EKC]{Foundry CA};
-  \node[label] (OEMCA1) [node distance=1.75cm,right of=IAKC]{OEM CA};
+  \node[label] (OEMCA1) [node distance=1.75cm,left of=IAKC]{OEM CA};
   \node[label] (OEMCA2) [node distance=1.75cm,right of=IDevIDC]{OEM CA};
   \node[label] (OwnerCA1) [node distance=1.75cm,left of=LAKC]{Owner CA};
   \node[label] (OwnerCA2) [node distance=1.9cm,right of=LDevIDC]{Owner CA};
 
   \path[every node/.style={font=\sffamily\small,fill=white,inner
     sep=1pt}]
-  (EK) edge node[above=1mm] {A} (IAK)
+  (EK) edge node[right=1mm] {A} (IAK)
   (IAK) edge node[above=1mm] {B} (IDevID)
   (IAK) edge node[right=1mm] {C} (LAK)
   (LAK) edge node[above=1mm] {D} (LDevID)

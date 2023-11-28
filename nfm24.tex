@@ -68,28 +68,32 @@ Perry Alexander}
 %
 %
 \section{Introduction}
-Development and deployment of trusted systems requires strong device
-identification~\citep{Martin:08:The-ten-page-in}. An entity should
-have confidence that a remote device is the device it claims to be. An
-ideal method for fulfilling this need uses asymmetric keys in the
-Trusted Platform Module (TPM) as secure device identifiers
-\citep{DevIDSpec-TCG}. A secure device identifier (DevID) is defined
-as an identifier that is cryptographically bound to a device by a
-trusted party~\citep{DevIDSpec-IEEE}.  As a secure Root of Trust for
-Storage and Reporting, a TPM provides the necessary
-protections for generating and storing DevIDs with suitable integrity
-guarantees.
 
-The Trusted Computing Group (TCG) describes protocols for assuring a key to be
-resident in a specific device's TPM~\citep{DevIDSpec-TCG}. These protocols are
-performed by a trusted Certificate Authority (CA) in communication with a
-certificate-requesting device and maintain a cryptographic evidentiary chain
-linking a DevID to a specific TPM-containing device \citep{DevIDSpec-TCG}.  
-For each provisioning procedure, the TCG outlines a protocol for the CA and the
+Deployment of trusted systems requires strong
+identification~\citep{Martin:08:The-ten-page-in} ensuring a remote device is
+unambiguously associated with an identity.  Specifically, the identity must be
+generated and bound to the device using good credentials  and stored in a way
+that prevents use to identify other devices.  Without strong identification a
+malicious source can spoof an identity by producing and using an invalid
+identity or stealing and using an identity from a good entity.
+
+One method for implementing strong identity is a \emph{secure device identifier
+(DevID)}~\citep{DevIDSpec-IEEE}.  A DevID is an identifier that is
+cryptographically bound to a device by a trusted party and protected to prevent
+usage outside the owning device.  The DevID concept is realized using a Trusted
+Platform Module (TPM) to generate and protect DevID
+instances~\citep{DevIDSpec-TCG}.  The TPM's capabilities for generating,
+chaining, and protecting keys provides an ideal environment for implementing
+DevIDs. 
+
+The Trusted Computing Group DevID Specification~\citep{DevIDSpec-TCG} describes protocols for assuring a key to be
+resident in a specific device's TPM when used. These
+protocols are performed by a trusted Certificate Authority (CA) in communication
+with a certificate-requesting device and maintain a cryptographic evidentiary
+chain linking a DevID to a specific TPM-containing device.   For each provisioning procedure, the TCG outlines a protocol for the CA and the
 certificate-requesting entity. Furthermore, the TCG claims that each protocol
-provides certain assurances. These assurances are the basis for the resulting
-cryptographic evidentiary chain.  Each assurance manifests as an assertion
-regarding either TPM-residency, key attributes, or previously-issued
+provides assurances that form the basis for the resulting
+cryptographic evidentiary chain.  Each assurance manifests as a statement about TPM-residency, key attributes, or previously-issued
 certificates.
 
 Our work examines correctness of two key certification protocols: (i) OEM
@@ -100,8 +104,8 @@ attestation~\citep{Coker::Principles-of-R,petz2022innovations} where device
 appraisal requires strong identification of an attestation source. Specifically,
 that the signing key for attestation is bound to the attestation manager
 responsible for attestation.  Formal verification is required for integration
-into our formally verified/synthesized attestation
-environment~\citep{petz2022innovations}.  Our contributions of this research
+into our verified/synthesized attestation
+manager~\citep{petz2022innovations}.  Contributions of this research
 include: (i) design and implementation of an abstract formal model of TPM
 command execution; (ii) an in-depth analysis of the TCG-provided IAK and LAK
 certification protocols, and (iii) a recommendation for clarifying the IAK
@@ -131,66 +135,60 @@ an abstract system state using a monadic approach. Here we implement a
 state transition system directly over a smaller subset of TPM 2.0
 commands and non-TPM commands targeted to device identifiers.
 
-The TPM 1.2 Privacy CA protocol was replaced by the Direct Anonymous
-Attestation (DAA) scheme in the TPM 2.0.  The work
-of~\citet{DAAAnalysis-Whit} and~\citet{DAAAnalysis-Wes} thoroughly
-study the TPM 2.0 DAA scheme. Collectively, they develop a symbolic
-model, a C++ implementation, and a formally-verified fix of the
-scheme. Both the Privacy CA and DAA protocols aim to allow remote
-authentication of a device while maintaining its anonymity. As such
-these protocols differ from the key certification protocols analyzed
-here that provide individual device identification.
+The TPM 1.2 Privacy CA protocol was replaced by the Direct Anonymous Attestation
+(DAA) scheme in the TPM 2.0.  The work of~\citet{DAAAnalysis-Whit}
+and~\citet{DAAAnalysis-Wes} thoroughly study the TPM 2.0 DAA scheme.
+Collectively, they develop a symbolic model, a C++ implementation, and a
+formally-verified fix of the scheme. Both the Privacy CA and DAA protocols aim
+to allow remote authentication of a device while maintaining its anonymity. As
+such these protocols differ from the key certification protocols analyzed here
+that provide individual device identification.
 
-Other work uses formal techniques to examine various aspects of both
-the TPM 1.2~\citep{AuthAnalysis,PCRAnalysis} and
-2.0~\citep{EAAnalysis,HMACAnalysis}.  These include analyzing
-authentication~\citep{AuthAnalysis}, platform configuration registers
-(PCRs)~\citep{PCRAnalysis}, enhanced
-authorization~\citep{EAAnalysis}, and hash-based message
-authentication code (HMAC) mechanisms~\citep{HMACAnalysis}. They
-utilize tools and techniques such as SAPIC~\citep{kremer2016automated}, Tamarin~\citep{meier2013tamarin}, and stateful
-applied pi calculus~\citep{Milner:99:Communicating-a}, amongst others.
+Other work uses formal techniques to examine various aspects of both the TPM
+1.2~\citep{AuthAnalysis,PCRAnalysis} and 2.0~\citep{EAAnalysis,HMACAnalysis}.
+These include analyzing authentication~\citep{AuthAnalysis}, platform
+configuration registers (PCRs)~\citep{PCRAnalysis}, enhanced
+authorization~\citep{EAAnalysis}, and hash-based message authentication code
+(HMAC) mechanisms~\citep{HMACAnalysis}. They utilize tools and techniques such
+as SAPIC~\citep{kremer2016automated}, Tamarin~\citep{meier2013tamarin}, and
+stateful applied pi calculus~\citep{Milner:99:Communicating-a}, amongst others.
 %
 %
 %
 \section{Background}
-The Trusted Platform Module (TPM) is a microcontroller that complies
-with the ISO/IEC 11889:2015 international standard.  The TPM and its
-specification were designed by the Trusted Computing Group (TCG) to
-act as a hardware root-of-trust for PC system security. To this end,
-TPMs have capabilities for secure generation of keys, algorithm
-agility, secure storage of keys, enhanced authorization, measurement
-storage and reporting, device identification, and NVRAM
-storage~\citep{{PracticalGuide}}.
+The Trusted Platform Module (TPM) is a microcontroller that complies with the
+ISO/IEC 11889:2015 international standard.  The TPM and its specification were
+designed by the Trusted Computing Group (TCG) to act as a hardware root-of-trust
+for PC system security. To this end, TPMs have capabilities for secure
+generation of keys, algorithm agility, secure storage of keys, enhanced
+authorization, measurement storage and reporting, device identification, and
+NVRAM storage~\citep{PracticalGuide}.
 
-TPM keys have attributes that are set at creation-time and restrict
-how they may be used.  Attributes include \verb|FixedTPM| to control
-duplication, \verb|Sign| and \verb|Decrypt| to indicate use as a
-signing or decryption key, and \verb|Restricted| to limit operations
-to TPM-generated data.
+A TPM key is an asymmetric key that may only be used by the creating
+TPM.  Primary TPM keys are
+maintained internally by the TPM as roots for chaining key ownership.
+Primary keys are shielded and unavailable outside the TPM.  Ordinary
+TPM keys are wrapped by a parent
+TPM key and can be stored outside the TPM.  The wrapping operation
+encrypts the ordinary TPM key's private key with the parent's public
+key and includes a PCR composite. The public key remains clear and can
+be used for encryption and signature checking.  However, decryption
+and signing is impossible if the parent key is not installed in the
+TPM to decrypt the private key.  Wrapping creates an ownership chain
+from ordinary keys to a primary key that cannot be removed from the
+TPM, thus binding keys in the chain to the TPM.
+
+TPM keys have attributes set at creation-time restricting how they may be used.
+Attributes include \verb|FixedTPM| to control duplication, \verb|Sign| and
+\verb|Decrypt| to indicate use as a signing or decryption key, and
+\verb|Restricted| to limit operations to TPM-generated data only.
 
 All TPMs are shipped with a root storage key, the endorsement key
 (EK).  The EK is a fixed-TPM, restricted, decryption key installed by
 the TPM Manufacturer in an immutable, shielded TPM location.  The EK
 has an associated certificate that binds the EK to a specific TPM.
-Although not a DevID itself, the EK plays a significant role as a
+Although not a DevID, the EK plays a significant role as a
 root-of-trust in provisioning a TPM-based device identity.
-
-% A TPM key is an asymmetric key that can only be used by the creating
-% TPM.  Primary TPM keys created with \verb|TPM2_CreatePrimary| are
-% maintained internally by the TPM as roots for chaining key ownership.
-% Primary keys are shielded and unavailable outside the TPM.  Ordinary
-% TPM keys created with \verb|TPM2_Create| and are wrapped by a parent
-% TPM key and can be stored outside the TPM.  The wrapping operation
-% encrypts the ordinary TPM key's private key with the parent's public
-% key and includes a PCR composite. The public key remains clear and can
-% be used for encryption and signature checking.  However, decryption
-% and signing is impossible if the parent key is not installed in the
-% TPM to decrypt the private key.  Wrapping creates an ownership chain
-% from ordinary keys to a primary key that cannot be removed from the
-% TPM, thus binding keys in the chain to the TPM.
-
-
 
 % key may only sign a PCR digest produced by the TPM during attestation
 % and to prove that a new key is loaded on the same TPM as itself during
