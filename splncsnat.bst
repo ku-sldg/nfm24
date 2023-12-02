@@ -484,7 +484,8 @@ FUNCTION {format.note}
 {
   url empty$
     'skip$
-    { "\urlprefix\url{" url * "}" * output }
+    'skip$
+%    { "\urlprefix\url{" url * "}" * output }
   if$
  note empty$
     { "" }
