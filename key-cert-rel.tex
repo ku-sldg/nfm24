@@ -6,13 +6,13 @@
   label/.style={rectangle,font=\rmfamily,minimum height=5mm,minimum width=10mm}]
 
   \node[key] (EK) {EK};
-  \node[key] (IAK) [node distance=2cm, below of=EK] {IAK};
+  \node[key] (IAK) [node distance=1.5cm, below of=EK] {IAK};
   \node[key] (IDevID) [node distance=2.5cm, right of=IAK] {IDevID};
-  \node[key] (LDevID) [node distance=2cm, below of=IDevID] {LDevID};
+  \node[key] (LDevID) [node distance=1.5cm, below of=IDevID] {LDevID};
   \node[cert] (EKC) [node distance=2cm,left of=EK] {EK Cert};
   \node[cert] (IAKC) [node distance=2cm,left of=IAK] {IAK Cert};
   \node[cert] (IDevIDC) [node distance=2.2cm,right of=IDevID] {IDevID Cert};
-  \node[key] (LAK) [node distance=2cm,below of=IAK] {LAK};
+  \node[key] (LAK) [node distance=1.5cm,below of=IAK] {LAK};
   \node[cert] (LAKC) [node distance=2cm,left of=LAK] {LAK Cert};
   \node[cert] (LDevIDC) [node distance=2.2cm,right of=LDevID] {LDevID Cert};
   \node[label] (ManCA) [node distance=1.75cm,left of=EKC]{Foundry CA};
@@ -23,10 +23,10 @@
 
   \path[every node/.style={font=\sffamily\small,fill=white,inner
     sep=1pt}]
-  (EK) edge node[right=1mm] {A} (IAK)
-  (IAK) edge node[above=1mm] {B} (IDevID)
-  (IAK) edge node[right=1mm] {C} (LAK)
-  (LAK) edge node[above=1mm] {D} (LDevID)
+  (EK) edge node[right=1mm] {} (IAK)
+  (IAK) edge node[above=1mm] {} (IDevID)
+  (IAK) edge node[right=1mm] {} (LAK)
+  (LAK) edge node[above=1mm] {} (LDevID)
   ;
 
   \path[every node/.style={font=\sffamily\small,fill=white,inner
@@ -49,5 +49,5 @@
 
 %%% Local Variables: 
 %%% mode: latex
-%%% TeX-master: "vstte23.tex"
+%%% TeX-master: "nfm24.tex"
 %%% End:
