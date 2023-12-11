@@ -286,15 +286,15 @@ risk of compromise.
 % AK. An AK's \verb|Restricted| attribute and associated certificate
 % results in cryptographic binding of signatures to a specific device.
 
-Locally significant AKs (LAKs) and DevIDs (LDevIDs) are installed by
-device owners and serve as aliases for the device. Unlike the IAK and
-IDevID they need not be long-lived, may be created and installed at
-any time, and shared widely.  LAKs are each wrapped by the IAK when
-created and are restricted like all AKs to operate only on TPM data.
-LDevIDs are DevIDs similarly created and wrapped by an LAK.  The LAK
-Cert and LDevID Cert for new AKs and LDevIDs are created by the Owner
-CA. The resulting structure showing relationships between AKs, DevIDs
-and Certificates is shown in figure~\ref{fig:cert_rel}.
+Local AKs (LAKs) and DevIDs (LDevIDs) are installed by device owners
+and serve as aliases for the device. Unlike the IAK and IDevID they
+need not be long-lived, may be created and installed at any time, and
+shared widely.  LAKs are each wrapped by the IAK or a preexisting LAK
+when created and are restricted like all AKs to operate only on TPM
+data.  LDevIDs are DevIDs similarly created and wrapped by an LAK.
+The LAK Cert and LDevID Cert for new AKs and LDevIDs are created by
+the Owner CA. The resulting structure showing relationships between
+AKs, DevIDs and Certificates is shown in figure~\ref{fig:cert_rel}.
 
 % Proper TPM key creation ensures
 % an ownership chain from a TPM's EK while a DevID certificate ensures
@@ -394,26 +394,26 @@ certificates.  All IDevID and LDevID certificates are leaf nodes.
 %   \label{fig:cert_rel}
 % \end{figure}
 
-
-
 \section{Protocol Execution Model}
 
-We use a labeled transition system to model abstract TPM and TSS
-command execution.  State is represented as a collection of objects
-installed in the TPM while transitions perform operations over state
-as defined by commands.  Labels represent individual commands and
-label sequences represent protocols.  DevID provisioning protocols are
-modeled as sequences of state transformations corresponding with
-commands executed by the CA and the OEM or Owner.
+TPM protocols are sequences of TPM and TSS instructions.  To model
+protocol execution we use a labeled transition system to model
+sequences of TPM and TSS command execution.  State is represented as a
+collection of objects installed in the TPM while transitions perform
+operations over state as defined by commands.  Labels represent
+individual commands and label sequences represent protocols.  DevID
+provisioning protocols are modeled as sequences of state
+transformations corresponding with commands executed by the OEM or
+Owner CA.
 
 \subsection{Keys and Certificates}
 
-Our model inductively defines a \verb|pubKey| and \verb|privKey|
-type for public keys and private keys respectively. A key of either
-type requires a unique identifier and a sequence of boolean values
-describing whether a particular attribute is set or not set. A key
-pair consists of a \verb|pubKey| and a \verb|privKey| with the same
-identifier and attributes.
+Our model defines a \verb|pubKey| and \verb|privKey| type for public
+keys and private keys respectively. A key of either type requires a
+unique identifier and a sequence of boolean values describing whether
+a particular attribute is set or not set. A key pair consists of a
+\verb|pubKey| and a \verb|privKey| with the same identifier and
+attributes.
 
 % \begin{lstlisting}[language=Coq]
 % Inductive pubKey : Type :=
@@ -443,10 +443,10 @@ certificate.
 
 Protocols used to create DevID certificates require performing TPM,
 TSS and non-TPM commands. A command may rely on a variety of
-parameters such as keys, nonces, certificates, as well as messages
-that define structures an entity may use or produce. The
-\verb|message| type is an abstract representation of these structures
-shown in Figure~\ref{fig:message-model}.
+parameters such as keys, nonces, certificates, and messages that
+define structures an entity may use or produce. The \verb|message|
+type shown in Figure~\ref{fig:message-model} is an abstract
+representation of these structures.
 
 \begin{figure}[hbtp]
 \begin{lstlisting}[language=Coq]
@@ -486,15 +486,15 @@ constructed from TPM-internal data such as private keys and PCRs; or
 (ii) digests produced by signature hash operations.  The \verb|state|
 type contains messages visible to the system.
 
-A labeled transition system models command execution in the canonical
-fashion as a triple $(S,L,\rightarrow)$ where $S$ is a set of states,
-$L$ is a set of labels, and
+The labeled transition system models command execution in the
+canonical fashion as a triple $(S,L,\rightarrow)$ where $S$ is a set
+of states, $L$ is a set of labels, and
 $\rightarrow \subseteq S \times L \times S$ is a labeled transition
 relation.  In this case, $S$ is defined as \verb|tpm_state * state|
 pairs; $L$ is the set of \verb|command| values; and $\rightarrow$ is
 the \verb|execute| relation defining single command execution.
-Specifically, \verb|execute|is defined using an inductive proposition
-relating a current state pair, a command, and a next state pair.
+\verb|execute| is defined using an inductive proposition relating a
+current state pair, a command, and a next state pair.
 
 % \begin{figure}[h]
 % \begin{lstlisting}[language=Coq]
