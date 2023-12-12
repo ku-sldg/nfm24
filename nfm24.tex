@@ -71,49 +71,40 @@ Perry Alexander}
 
 Deployment of trusted systems requires strong
 identification~\citep{Martin:08:The-ten-page-in} ensuring a remote
-device is unambiguously associated with an identity.  Specifically,
-the identity must be: (i) stored in a way that prevents use by other
-devices; and (ii) generated and bound to the device using good
-credentials.  Without strong identification a malicious source can spoof
-an identity by producing and using an invalid identity or stealing and
-using an identity from a good entity.
+device is unambiguously associated with an identity. Strong identity
+has two properties: (i) generated and bound to the device using good
+credentials (integrity); and (ii) stored in a way that prevents use by
+other devices (confidentiality).  Without strong identification a
+malicious source can produce and use an invalid identity or steal and
+use the identity of good entity.
 
 One method for implementing strong identity is a \emph{secure device
-  identifier (DevID)}~\citep{DevIDSpec-IEEE}.  A DevID is an
-identifier that is cryptographically bound to a device by a trusted
-party and protected to prevent usage outside the owning device.  The
-DevID concept is realized using a Trusted Platform Module (TPM) to
-generate and protect DevID instances~\citep{DevIDSpec-TCG}.  The TPM's
-capabilities for generating, chaining, and protecting keys provides an
-ideal environment for implementing DevIDs.
+  identifier (DevID)}~\citep{DevIDSpec-IEEE} realized using a Trusted
+Platform Module (TPM) to generate and protect DevID instances.  First,
+the Trusted Computing Group DevID Specification~\citep{DevIDSpec-TCG}
+describes protocols for assuring DevID integrity and residency. These
+protocols are performed by a trusted Certificate Authority (CA)
+communicating with a certificate-requesting device.  They evaluate a
+cryptographic evidentiary chain linking a DevID to its TPM-containing
+device and produce a certificate assuring integrity.  Second, the TPM
+provides an attribute set during key creation that prevents that
+prevents duplication or sharing of a key.  Setting this attribute for
+a DevID key ensures its confidentiality.
 
-The Trusted Computing Group DevID Specification~\citep{DevIDSpec-TCG}
-describes protocols for assuring a key to be resident in a specific
-device's TPM. These protocols are performed by a trusted
-Certificate Authority (CA) in communication with a
-certificate-requesting device and maintain a cryptographic evidentiary
-chain linking a DevID to a specific TPM-containing device.  For each
-provisioning procedure, the TCG outlines a protocol for the CA and the
-certificate-requesting entity. Furthermore, the TCG claims that each
-protocol provides assurances that form the basis for the resulting
-cryptographic evidentiary chain.  Each assurance manifests as a
-statement about TPM-residency, key attributes, or previously-issued
-certificates.
-
-Our work examines correctness of two key certification protocols: (i) OEM
-Creation of an IAK Certificate based on an EK Certificate; and (ii) Owner
-Creation of an LAK Certificate based on an IAK Certificate. These DevID
-establishment protocols are essential for our work in remote
-attestation~\citep{Coker::Principles-of-R,petz2022innovations} where device
-appraisal requires strong identification of an attestation source. Specifically,
-that the signing key for attestation is bound to the attestation manager
-responsible for attestation.  Formal verification is required for integration
-into our verified/synthesized attestation
-manager~\citep{petz2022innovations}.  Contributions of this research
-include: (i) design and implementation of an abstract formal model of TPM
-command execution; (ii) an in-depth analysis of the TCG-provided IAK and LAK
-certification protocols, and (iii) a recommendation for clarifying the IAK
-provisioning procedure.
+Our work focuses on correctness of two certification protocols:
+(i) OEM Creation of an IAK Certificate based on an EK Certificate; and
+(ii) Owner Creation of an LAK Certificate based on an IAK
+Certificate. These DevID establishment protocols and their resulting
+certificates are essential for our work in remote
+attestation~\citep{Coker::Principles-of-R,petz2022innovations} where
+device appraisal requires strong identification of an attestation
+source. Specifically, ensuring the signing key for an attestation
+result is bound to the attestation manager responsible for that
+attestation.  Contributions of this research include: (i) design and
+implementation of an abstract formal model of TPM command execution;
+(ii) an in-depth analysis of the TCG-provided IAK and LAK
+certification protocols, and (iii) a recommendation for clarifying the
+IAK provisioning procedure.
 
 \section{Related Work}
 The Privacy CA protocol for the TPM 1.2 has been extensively studied
@@ -412,21 +403,20 @@ and certificates is shown in figure~\ref{fig:cert_rel}.
 \section{Protocol Execution Model}
 
 TPM protocols are sequences of TPM and TSS instructions.  To model
-protocol execution we use a labeled transition system to model
-sequences of TPM and TSS command execution.  State is represented as a
-collection of objects installed in the TPM while transitions perform
-operations over state as defined by commands.  Labels represent
-individual commands and label sequences represent protocols.  DevID
-provisioning protocols are modeled as sequences of state
-transformations corresponding with commands executed by the OEM or
-Owner CA.
+protocol execution we use a labeled transition system representing
+effects of protocol execution.  State is represented as a collection
+of objects installed in the TPM while transitions perform operations
+over state as defined by commands.  Labels represent individual
+commands and label sequences represent protocols.  DevID provisioning
+protocols are modeled as sequences of state transformations
+corresponding with commands executed by the OEM or Owner CA.
 
-\subsection{Keys and Certificates}
+%\subsection{Keys and Certificates}
 
-Our model defines a \verb|pubKey| and \verb|privKey| type for public
+The model defines a \verb|pubKey| and \verb|privKey| type for public
 keys and private keys respectively. A key of either type requires a
 unique identifier and a sequence of boolean values describing whether
-a particular attribute is set or not set. A key pair consists of a
+a particular key attribute is set or not set. An asymmetric key pair is a
 \verb|pubKey| and a \verb|privKey| with the same identifier and
 attributes.
 
@@ -438,11 +428,11 @@ attributes.
 % | Private : keyIdType -> Restricted -> Sign -> Decrypt -> FixedTPM -> privKey.
 % \end{lstlisting}
 
-Certificates are defined by the inductive type \verb|signedCert|
-consisting of a public key, an identifier, and a private key. The
-identifier represents the certificate's Subject field and may include
-information describing either the TPM or the device. The private key
-parameter denotes the CA's key that performed the signature over the
+Certificates are defined by the \verb|signedCert| type consisting of a
+public key, an identifier, and a private key. The identifier
+represents the certificate's Subject field and may include information
+describing either the TPM or the device. The private key parameter
+denotes the CA's key that performed the signature over the
 certificate.
 
 % \begin{lstlisting}[language=Coq]
@@ -454,14 +444,14 @@ certificate.
 % | Cert : pubKey -> identifier -> privKey -> signedCert.
 % \end{lstlisting}
 
-\subsection{Commands}
+%\subsection{Commands}
 
-Protocols used to create DevID certificates require performing TPM,
-TSS and non-TPM commands. A command may rely on a variety of
-parameters such as keys, nonces, certificates, and messages that
-define structures an entity may use or produce. The \verb|message|
-type shown in Figure~\ref{fig:message-model} is an abstract
-representation of these structures.
+Protocols used to create DevID certificates perform TPM, TSS and
+non-TPM commands. A command may rely on a variety of parameters such
+as keys, nonces, certificates, and messages that define structures an
+entity may use or produce. The \verb|message| type shown in
+Figure~\ref{fig:message-model} is an abstract representation of these
+structures.
 
 \begin{figure}[hbtp]
 \begin{lstlisting}[language=Coq]
@@ -484,9 +474,9 @@ Inductive message : Type :=
 
 An entity may derive additional messages from a collection of known
 messages.  For example, given a message of the form
-\verb|signature m k|, \verb|m| may be deduced while
-given a message in the form \verb|encryptedCredential n g k|, no
-messages may be deduced.  Message inference is modeled in two
+\verb|signature m k|, \verb|m| may be deduced.  A message in the form
+\verb|encryptedCredential n g k| protects its contents unless its
+decryption key is also available.  Message inference is modeled in two
 equivalent ways: (i) a recursive function \verb|inferFrom|; and (ii)
 an inductive proposition \verb|inferrable|.  Additional messages may
 be derived from signed messages, \verb|TPM2B_Attest| structures,
@@ -568,27 +558,28 @@ Inductive command : Type :=
 % set, the message must be in the current \verb|tpm_state|.
 
 While most TPM command functions are easily inferred from their name,
-several are worth explaining in some detail.  The \verb|TPM2_Certify|
-command provides proof that an object is loaded in the TPM by producing a
-signed \verb|TPM2B_Attest| structure. The command requires two inputs:
-(i) a public key to be certified; and (ii) a private key to sign the
-attestation structure. The private key must have the \verb|Sign|
-attribute set and must be loaded. To execute, the TPM verifies the
-public key parameter's inverse is also loaded.
+two are critical to CA protocol verification.  The \verb|TPM2_Certify|
+command provides proof that an object is loaded in the TPM by
+producing a signed \verb|TPM2B_Attest| structure. The command requires
+two inputs: (i) a public key to be certified; and (ii) a private key
+to sign the attestation structure. The private key must have the
+\verb|Sign| attribute set and must be loaded. To execute, the TPM
+verifies the public key parameter's inverse is also loaded.
 
 % Messages produced by the \verb|TPM2_Sign| and \verb|TPM2_Certify|
 % commands are defined using the \verb|signature| constructor. A
 % signature may be verified against a public key using the
 % \verb|CheckSig| command.
 
-The \verb|TPM2_MakeCredential| command is used when a remote entity,
-desires to affirm that some private key is loaded on the same TPM as a
-particular EK. This command produces an
-\verb|encryptedCredential| structure and requires three inputs: the
-cryptographic name of a key to be credentialed; a secret; and a public
-EK. % The cryptographic name of a key is produced by hashing its public
-% area with its associated hash algorithm and prepending the Algorithm
-% ID of the hashing algorithm.
+% The \verb|TPM2_MakeCredential| command is used when a remote entity,
+% desires to affirm that some private key is loaded on the same TPM as a
+% particular EK. This command produces an
+% \verb|encryptedCredential| structure and requires three inputs: the
+% cryptographic name of a key to be credentialed; a secret; and a public
+% EK. % The cryptographic name of a key is produced by hashing its public
+% % area with its associated hash algorithm and prepending the Algorithm
+% % ID of the hashing algorithm.
+
 The \verb|TPM2_ActivateCredential| command is used by the recipient of
 an encrypted credential blob to release its secret.  The secret
 contained in an encrypted credential blob is only released if the
@@ -599,14 +590,14 @@ the name field is also loaded. The secret is only released if both
 steps succeed. The secret value may then be returned to the remote CA
 to validate the result.
 
-The \verb|MakeCSR_IDevID| command produces a \verb|TCG_CSR_IDevID|
-structure.  A \verb|TCG_CSR_IDevID| is a certificate signing request
-(CSR) that contains the data required to couple an initial DevID to a
-TPM-containing device.  This structure is used any time
-a provisioning procedure uses the EK certificate.  The
-\verb|MakeCSR_LDevID| command is similar except that it produces a
-\verb|TCG_CSR_LDevID| structure that includes the certification
-information for a locally significant DevID.
+% The \verb|MakeCSR_IDevID| command produces a \verb|TCG_CSR_IDevID|
+% structure.  A \verb|TCG_CSR_IDevID| is a certificate signing request
+% (CSR) that contains the data required to couple an initial DevID to a
+% TPM-containing device.  This structure is used any time
+% a provisioning procedure uses the EK certificate.  The
+% \verb|MakeCSR_LDevID| command is similar except that it produces a
+% \verb|TCG_CSR_LDevID| structure that includes the certification
+% information for a locally significant DevID.
 
 % The \verb|CheckCert| command verifies a signature over a certificate
 % against a public key. One should check an EK certificate against the
@@ -619,7 +610,7 @@ information for a locally significant DevID.
 % command is typically used to check the attributes of some external
 % entity's key.
 
-\subsection{Protocols}
+%\subsection{Protocols}
 
 Commands are sequenced linearly by the \verb|sequence| type to form
 protocols. Protocol execution is defined as an inductive proposition
