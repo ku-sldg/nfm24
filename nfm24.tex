@@ -405,6 +405,9 @@ Figure~\ref{fig:message-model} is an abstract representation of these
 structures.
 
 \begin{figure}[hbtp]
+\vspace{-\medskipamount}
+\vspace{-\medskipamount}
+
 \begin{lstlisting}[language=Coq]
 Inductive message : Type :=
 | signature : message -> privKey -> message
@@ -483,6 +486,8 @@ current state pair, a command, and a next state pair.
 % must be in the next state.
 
 \begin{figure}[hbtp]
+\vspace{-\medskipamount}
+\vspace{-\medskipamount}
   \begin{footnotesize}
 \begin{lstlisting}[language=Coq]
 Inductive command : Type :=
@@ -691,6 +696,8 @@ and (ii) the minimal initial state is sufficient for successful
 execution.
 
 \begin{figure}[hbtp]
+\vspace{-\medskipamount}
+\vspace{-\medskipamount}
 \begin{lstlisting}[language=Coq]
 Definition lower_bound seq minTPM min : Prop :=
   forall iniTPM ini fin,
@@ -731,6 +738,8 @@ that the message is a valid certificate request.
 % generated.
 
 \begin{figure}[hbtp]
+  \vspace{-\medskipamount}
+  \vspace{-\medskipamount}
   \begin{lstlisting}[language=Coq]
 Definition arbitrary_CSR_production (steps_CA : message -> Prop) : Prop :=
   forall seq iniTPM ini finTPM fin,
@@ -793,7 +802,10 @@ loaded on the same TPM as the IAK. These assurances correspond with
 the Chain of Trust relation from IAK to LAK in Figure \ref{fig:cert_rel}.
 
 \begin{figure}[hpbt]
-\begin{enumerate}[itemsep=0pt,parsep=0pt,partopsep=0pt]
+  \vspace{-\medskipamount}
+  \vspace{-\medskipamount}
+
+  \begin{enumerate}[itemsep=0pt,parsep=0pt,partopsep=0pt]
   \setcounter{enumi}{-1}
   \item The Owner creates and loads the LAK
   \item The Owner certifies the LAK with the IAK
@@ -852,6 +864,8 @@ keys, all key values are specified to be pairwise distinct.
 % \end{figure}
 
 \begin{figure}[hpbt]
+  \vspace{-\medskipamount}
+  \vspace{-\medskipamount}
 \begin{lstlisting}[language=Coq]
 Definition steps1to5_Owner : sequence :=
 TPM2_Certify pubLAK privIAK;
@@ -892,6 +906,8 @@ as a method for referencing elements of the certificate request
 within proof statements.
 
 \begin{figure}[hpbt]
+\vspace{-\medskipamount}
+\vspace{-\medskipamount}
 \begin{lstlisting}[language=Coq]
 Definition steps_CA (msg:message) (iak lak:pubKey) (cert:signedCert) : Prop :=
 match msg with
@@ -1074,6 +1090,8 @@ and (C) the EK certificate is valid. These assurances correspond with
 the Proof of Residency line A in Figure \ref{fig:cert_rel}.
 
 \begin{figure}[hbtp]
+\vspace{-\medskipamount}
+\vspace{-\medskipamount}
 \begin{enumerate}[itemsep=0pt,parsep=0pt,partopsep=0pt]
   \setcounter{enumi}{-1}
   \item The OEM creates and loads the IAK
@@ -1232,6 +1250,8 @@ final state. The CA's final steps are implicit in that the nonce in
 the challenge blob is the same nonce in the OEM's state.
 
 \begin{figure}[hptb]
+\vspace{-\medskipamount}
+\vspace{-\medskipamount}
 \begin{lstlisting}[language=Coq]
 Theorem iak_and_ek_in_TPM :
   forall seq2 seq1 iniTPM ini midTPM mid finTPM fin csr ident ek iak cert g,
