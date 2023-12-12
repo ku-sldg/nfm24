@@ -115,7 +115,7 @@ protocol that enhances its security without changing the existing
 functionality of the TPM 1.2. Our work similarly suggests a small
 modification to the IAK provisioning procedure which requires no
 change to the existing functionality of the TPM 2.0.  In contrast,
-earlier work of~\citet{PrivacyCAAnalysis-Hall,TPM12Model} analyzes the
+earlier work of~\citet{PrivacyCAAnalysis-Hall} analyzes the
 Privacy CA protocol but does not consider any specific
 adversary. Instead, they consider the functional correctness of the
 protocol and specifically examine the protocol implementation to
@@ -865,20 +865,6 @@ keys, all key values are specified to be pairwise distinct.
 % \caption{Parameters of LAK Provisioning Procedure}
 % \end{figure}
 
-The protocol is modeled in two parts: the Owner's steps (Steps 0-5)
-followed by the CA's steps (Steps 6-7).  Each part of the procedure is
-modeled using the initialized state and the sequential command
-construction defined previously.  We construct a \verb|sequence| value
-for the Owner and a function for the CA. Constructing the Owner's
-steps is straightforward and shown in
-Figure~\ref{fig:lak_model_Owner}. Step 0 is assumed to have been
-performed previously since its results are already encapsulated in the
-Owner's initialized state.  Each remaining step of the Owner
-corresponds with exactly one command in the model, namely
-\verb|TPM2_Certify| for Step 1, \verb|MakeCSR_LDevID| for Step 2,
-\verb|TPM2_Hash| for Step 3, \verb|TPM2_Sign| for Step 4, and
-\verb|MakePair| for Step 5.
-
 \begin{figure}[hpbt]
 \begin{lstlisting}[language=Coq]
 Definition steps1to5_Owner : sequence :=
@@ -900,6 +886,20 @@ TPM2_Certify pubLAK privIAK
 \caption{Owner's LAK Provisioning Protocol}
 \label{fig:lak_model_Owner}
 \end{figure}
+
+The protocol is modeled in two parts: the Owner's steps (Steps 0-5)
+followed by the CA's steps (Steps 6-7).  Each part of the procedure is
+modeled using the initialized state and the sequential command
+construction defined previously.  We construct a \verb|sequence| value
+for the Owner and a function for the CA. Constructing the Owner's
+steps is straightforward and shown in
+Figure~\ref{fig:lak_model_Owner}. Step 0 is assumed to have been
+performed previously since its results are already encapsulated in the
+Owner's initialized state.  Each remaining step of the Owner
+corresponds with exactly one command in the model, namely
+\verb|TPM2_Certify| for Step 1, \verb|MakeCSR_LDevID| for Step 2,
+\verb|TPM2_Hash| for Step 3, \verb|TPM2_Sign| for Step 4, and
+\verb|MakePair| for Step 5.
 
 The CA's steps in Figure~\ref{fig:lak_model_CA} are more complex as
 they rely on the certificate request produced by the Owner. 
@@ -1386,7 +1386,7 @@ changes to the IAK provisioning procedure.
 \medskip
 
 \noindent All verification models and \LaTeX\ source associated with
-this work may be found at \url{git@github.com:ku-sldg/vstte23.git}.
+this work may be found at \url{git@github.com:ku-sldg/nfm24.git}.
 
 % 
 % 
