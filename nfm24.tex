@@ -72,9 +72,9 @@ Perry Alexander}
 Deployment of trusted systems requires strong
 identification~\citep{Martin:08:The-ten-page-in} ensuring a remote
 device is unambiguously associated with an identity. Strong identity
-has two properties: (i) generated and bound to the device using good
-credentials (integrity); and (ii) stored in a way that prevents use by
-other devices (confidentiality).  Without strong identification a
+has two properties: (i) stored in a way that prevents use by
+other devices (confidentiality); and (ii) generated and bound to the device using good
+credentials (integrity).  Without strong identification a
 malicious source can produce and use an invalid identity or steal and
 use the identity of good entity.
 
@@ -87,8 +87,8 @@ protocols are performed by a trusted Certificate Authority (CA)
 communicating with a certificate-requesting device.  They evaluate a
 cryptographic evidentiary chain linking a DevID to its TPM-containing
 device and produce a certificate assuring integrity.  Second, the TPM
-provides an attribute set during key creation that prevents that
-prevents duplication or sharing of a key.  Setting this attribute for
+provides an attribute that when set during key creation
+prevents duplication or sharing of a key. Setting this attribute for
 a DevID key ensures its confidentiality.
 
 Our work focuses on correctness of two certification protocols:
