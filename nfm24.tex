@@ -461,13 +461,13 @@ An entity may derive additional messages from a collection of known
 messages.  For example, given a message of the form
 \verb|signature m k|, \verb|m| may be deduced.  A message in the form
 \verb|encryptedCredential n g k| protects its contents unless its
-decryption key is also available.  Message inference is modeled in two
-equivalent ways: (i) a recursive function \verb|inferFrom|; and (ii)
-an inductive proposition \verb|inferrable|.  Additional messages may
-be derived from signed messages, \verb|TPM2B_Attest| structures,
-certificate signing requests (CSRs), certificates, and message
-pairs. Other messages either contain no additional information or
-information is concealed.
+decryption key is also available.  Additional messages may be derived
+from signed messages, \verb|TPM2B_Attest| structures, certificate
+signing requests (CSRs), certificates, and message pairs. Other
+messages either contain no additional information or information is
+concealed.  Message inference is modeled by a
+recursive function \verb|inferFrom| and an equivalent inductive
+proposition \verb|inferrable|.
 
 \verb|tpm_state| and \verb|state| are lists of messages. The
 \verb|tpm_state| type contains messages that a restricted signing key
@@ -542,7 +542,7 @@ Inductive command : Type :=
 % \verb|state|. If the key does have the \verb|Restricted| attribute
 % set, the message must be in the current \verb|tpm_state|.
 
-While most TPM command functions are easily inferred from their name,
+While most TPM command behaviors are easily inferred from their name,
 two are critical to CA protocol verification.  The \verb|TPM2_Certify|
 command provides proof that an object is loaded in the TPM by
 producing a signed \verb|TPM2B_Attest| structure. The command requires
@@ -597,7 +597,7 @@ to validate the result.
 
 %\subsection{Protocols}
 
-Commands are sequenced linearly by the \verb|sequence| type to form
+Commands are sequenced linearly by the \verb|sequence| constructor to form
 protocols. Protocol execution is defined as an inductive proposition
 relating a current state pair, a command sequence, and a next state
 pair. Sequential execution first executes the command at the head of a
@@ -670,7 +670,7 @@ TPM-residency, key attributes, or previously-issued certificates and
 provides the basis for the resulting cryptographic evidentiary chain
 formed by a chain of certificates.
 
-To verify these assurances, we consider two scenarios: (i) the
+To verify these properties, we consider two scenarios: (i) the
 certificate-requesting entity and the CA are both trusted to execute
 their steps correctly; and (ii) only the CA is trusted to execute its
 steps correctly. We use two novel proof techniques to verify
@@ -706,7 +706,7 @@ Definition sufficient seq minTPM min : Prop :=
 We use the minimal initial state to prove that an unknown key is
 loaded on the same TPM as a previously-certified key if the
 certificate-requesting entity successfully follows the TCG's
-recommended procedure.  Specifically, that the key whose presence is
+recommended procedure.  Specifically, the key whose presence is
 required is included in the minimal initial state for protocol
 execution.
 
@@ -789,7 +789,7 @@ The TCG's specification claims the protocol for creating an LAK
 certificate in Figure~\ref{fig:lak-certificate-creation} provides
 these assurances: (A) the LAK has good attributes; and (B) the LAK is
 loaded on the same TPM as the IAK. These assurances correspond with
-the Chain of Trust line C in Figure \ref{fig:cert_rel}.
+the Chain of Trust relation from IAK to LAK in Figure \ref{fig:cert_rel}.
 
 \begin{figure}[hpbt]
 \begin{enumerate}[itemsep=0pt,parsep=0pt,partopsep=0pt]
