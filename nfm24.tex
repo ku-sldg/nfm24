@@ -388,21 +388,20 @@ certificates.  All IDevID and LDevID certificates are leaf nodes.
 \section{Protocol Execution Model}
 
 TPM protocols are sequences of TPM and TSS instructions.  To model
-protocol execution we use a labeled transition system to model
-sequences of TPM and TSS command execution.  State is represented as a
-collection of objects installed in the TPM while transitions perform
-operations over state as defined by commands.  Labels represent
-individual commands and label sequences represent protocols.  DevID
-provisioning protocols are modeled as sequences of state
-transformations corresponding with commands executed by the OEM or
-Owner CA.
+protocol execution we use a labeled transition system representing
+effects of protocol execution.  State is represented as a collection
+of objects installed in the TPM while transitions perform operations
+over state as defined by commands.  Labels represent individual
+commands and label sequences represent protocols.  DevID provisioning
+protocols are modeled as sequences of state transformations
+corresponding with commands executed by the OEM or Owner CA.
 
-\subsection{Keys and Certificates}
+%\subsection{Keys and Certificates}
 
-Our model defines a \verb|pubKey| and \verb|privKey| type for public
+The model defines a \verb|pubKey| and \verb|privKey| type for public
 keys and private keys respectively. A key of either type requires a
 unique identifier and a sequence of boolean values describing whether
-a particular attribute is set or not set. A key pair consists of a
+a particular key attribute is set or not set. An asymmetric key pair is a
 \verb|pubKey| and a \verb|privKey| with the same identifier and
 attributes.
 
@@ -414,11 +413,11 @@ attributes.
 % | Private : keyIdType -> Restricted -> Sign -> Decrypt -> FixedTPM -> privKey.
 % \end{lstlisting}
 
-Certificates are defined by the inductive type \verb|signedCert|
-consisting of a public key, an identifier, and a private key. The
-identifier represents the certificate's Subject field and may include
-information describing either the TPM or the device. The private key
-parameter denotes the CA's key that performed the signature over the
+Certificates are defined by the \verb|signedCert| type consisting of a
+public key, an identifier, and a private key. The identifier
+represents the certificate's Subject field and may include information
+describing either the TPM or the device. The private key parameter
+denotes the CA's key that performed the signature over the
 certificate.
 
 % \begin{lstlisting}[language=Coq]
@@ -430,14 +429,14 @@ certificate.
 % | Cert : pubKey -> identifier -> privKey -> signedCert.
 % \end{lstlisting}
 
-\subsection{Commands}
+%\subsection{Commands}
 
-Protocols used to create DevID certificates require performing TPM,
-TSS and non-TPM commands. A command may rely on a variety of
-parameters such as keys, nonces, certificates, and messages that
-define structures an entity may use or produce. The \verb|message|
-type shown in Figure~\ref{fig:message-model} is an abstract
-representation of these structures.
+Protocols used to create DevID certificates perform TPM, TSS and
+non-TPM commands. A command may rely on a variety of parameters such
+as keys, nonces, certificates, and messages that define structures an
+entity may use or produce. The \verb|message| type shown in
+Figure~\ref{fig:message-model} is an abstract representation of these
+structures.
 
 \begin{figure}[hbtp]
 \begin{lstlisting}[language=Coq]
@@ -460,9 +459,9 @@ Inductive message : Type :=
 
 An entity may derive additional messages from a collection of known
 messages.  For example, given a message of the form
-\verb|signature m k|, \verb|m| may be deduced while
-given a message in the form \verb|encryptedCredential n g k|, no
-messages may be deduced.  Message inference is modeled in two
+\verb|signature m k|, \verb|m| may be deduced.  A message in the form
+\verb|encryptedCredential n g k| protects its contents unless its
+decryption key is also available.  Message inference is modeled in two
 equivalent ways: (i) a recursive function \verb|inferFrom|; and (ii)
 an inductive proposition \verb|inferrable|.  Additional messages may
 be derived from signed messages, \verb|TPM2B_Attest| structures,
@@ -544,27 +543,28 @@ Inductive command : Type :=
 % set, the message must be in the current \verb|tpm_state|.
 
 While most TPM command functions are easily inferred from their name,
-several are worth explaining in some detail.  The \verb|TPM2_Certify|
-command provides proof that an object is loaded in the TPM by producing a
-signed \verb|TPM2B_Attest| structure. The command requires two inputs:
-(i) a public key to be certified; and (ii) a private key to sign the
-attestation structure. The private key must have the \verb|Sign|
-attribute set and must be loaded. To execute, the TPM verifies the
-public key parameter's inverse is also loaded.
+two are critical to CA protocol verification.  The \verb|TPM2_Certify|
+command provides proof that an object is loaded in the TPM by
+producing a signed \verb|TPM2B_Attest| structure. The command requires
+two inputs: (i) a public key to be certified; and (ii) a private key
+to sign the attestation structure. The private key must have the
+\verb|Sign| attribute set and must be loaded. To execute, the TPM
+verifies the public key parameter's inverse is also loaded.
 
 % Messages produced by the \verb|TPM2_Sign| and \verb|TPM2_Certify|
 % commands are defined using the \verb|signature| constructor. A
 % signature may be verified against a public key using the
 % \verb|CheckSig| command.
 
-The \verb|TPM2_MakeCredential| command is used when a remote entity,
-desires to affirm that some private key is loaded on the same TPM as a
-particular EK. This command produces an
-\verb|encryptedCredential| structure and requires three inputs: the
-cryptographic name of a key to be credentialed; a secret; and a public
-EK. % The cryptographic name of a key is produced by hashing its public
-% area with its associated hash algorithm and prepending the Algorithm
-% ID of the hashing algorithm.
+% The \verb|TPM2_MakeCredential| command is used when a remote entity,
+% desires to affirm that some private key is loaded on the same TPM as a
+% particular EK. This command produces an
+% \verb|encryptedCredential| structure and requires three inputs: the
+% cryptographic name of a key to be credentialed; a secret; and a public
+% EK. % The cryptographic name of a key is produced by hashing its public
+% % area with its associated hash algorithm and prepending the Algorithm
+% % ID of the hashing algorithm.
+
 The \verb|TPM2_ActivateCredential| command is used by the recipient of
 an encrypted credential blob to release its secret.  The secret
 contained in an encrypted credential blob is only released if the
@@ -575,14 +575,14 @@ the name field is also loaded. The secret is only released if both
 steps succeed. The secret value may then be returned to the remote CA
 to validate the result.
 
-The \verb|MakeCSR_IDevID| command produces a \verb|TCG_CSR_IDevID|
-structure.  A \verb|TCG_CSR_IDevID| is a certificate signing request
-(CSR) that contains the data required to couple an initial DevID to a
-TPM-containing device.  This structure is used any time
-a provisioning procedure uses the EK certificate.  The
-\verb|MakeCSR_LDevID| command is similar except that it produces a
-\verb|TCG_CSR_LDevID| structure that includes the certification
-information for a locally significant DevID.
+% The \verb|MakeCSR_IDevID| command produces a \verb|TCG_CSR_IDevID|
+% structure.  A \verb|TCG_CSR_IDevID| is a certificate signing request
+% (CSR) that contains the data required to couple an initial DevID to a
+% TPM-containing device.  This structure is used any time
+% a provisioning procedure uses the EK certificate.  The
+% \verb|MakeCSR_LDevID| command is similar except that it produces a
+% \verb|TCG_CSR_LDevID| structure that includes the certification
+% information for a locally significant DevID.
 
 % The \verb|CheckCert| command verifies a signature over a certificate
 % against a public key. One should check an EK certificate against the
@@ -595,7 +595,7 @@ information for a locally significant DevID.
 % command is typically used to check the attributes of some external
 % entity's key.
 
-\subsection{Protocols}
+%\subsection{Protocols}
 
 Commands are sequenced linearly by the \verb|sequence| type to form
 protocols. Protocol execution is defined as an inductive proposition
