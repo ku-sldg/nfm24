@@ -192,7 +192,6 @@ Creator \\
     \label{fig:req_and_recs}
   \end{center}
 \end{table}
-
 %%\subsection{TPM Provisioning}
 
 All TPMs are shipped with a primary storage key called the \emph{Endorsement
@@ -405,6 +404,8 @@ entity may use or produce. The \verb|message| type shown in
 Figure~\ref{fig:message-model} is an abstract representation of these
 structures.
 
+\vspace{-\medskipamount}
+\vspace{-\medskipamount}
 \begin{figure}[hbtp]
 \begin{lstlisting}[language=Coq]
 Inductive message : Type :=
@@ -482,6 +483,8 @@ current state pair, a command, and a next state pair.
 % command's inputs, some inputs must be in the current, and the results
 % must be in the next state.
 
+\vspace{-\medskipamount}
+\vspace{-\medskipamount}
 \begin{figure}[hbtp]
   \begin{footnotesize}
 \begin{lstlisting}[language=Coq]
@@ -498,6 +501,8 @@ Inductive command : Type :=
 \caption{TPM Command Data Structure}
 \label{fig:command-model}
 \end{figure}
+\vspace{-\medskipamount}
+\vspace{-\medskipamount}
 
 %% \begin{figure}[hbtp]
 %%  \begin{footnotesize}
@@ -687,8 +692,10 @@ obligation describing this property in
 Figure~\ref{fig:minimal-initial-state} has two parts: (i) the minimal
 initial state is a lower bound on the set of possible initial states;
 and (ii) the minimal initial state is sufficient for successful
-execution. 
+execution.
 
+\vspace{-\medskipamount}
+\vspace{-\medskipamount}
 \begin{figure}[hbtp]
 \begin{lstlisting}[language=Coq]
 Definition lower_bound seq minTPM min : Prop :=
@@ -702,6 +709,8 @@ Definition sufficient seq minTPM min : Prop :=
 \caption{Minimal Initial State}
 \label{fig:minimal-initial-state}
 \end{figure}
+\vspace{-\medskipamount}
+\vspace{-\medskipamount}
 
 We use the minimal initial state to prove that an unknown key is
 loaded on the same TPM as a previously-certified key if the
@@ -729,6 +738,8 @@ that the message is a valid certificate request.
 % command sequence. All messages except keys and certificates must be
 % generated.
 
+\vspace{-\medskipamount}
+\vspace{-\medskipamount}
 \begin{figure}[hbtp]
   \begin{lstlisting}[language=Coq]
 Definition arbitrary_CSR_production (steps_CA : message -> Prop) : Prop :=
@@ -742,6 +753,8 @@ Definition arbitrary_CSR_production (steps_CA : message -> Prop) : Prop :=
   \caption{Arbitrary CSR production definition.}
   \label{fig:csr-production}
 \end{figure}
+\vspace{-\medskipamount}
+\vspace{-\medskipamount}
 
 We constrain the initial state of the certificate-requesting entity to
 include only those messages needed for the request that cannot be
@@ -791,6 +804,8 @@ these assurances: (A) the LAK has good attributes; and (B) the LAK is
 loaded on the same TPM as the IAK. These assurances correspond with
 the Chain of Trust relation from IAK to LAK in Figure \ref{fig:cert_rel}.
 
+\vspace{-\medskipamount}
+\vspace{-\medskipamount}
 \begin{figure}[hpbt]
 \begin{enumerate}[itemsep=0pt,parsep=0pt,partopsep=0pt]
   \setcounter{enumi}{-1}
@@ -817,6 +832,8 @@ the Chain of Trust relation from IAK to LAK in Figure \ref{fig:cert_rel}.
   \caption{LAK Certificate Creation Protocol}
   \label{fig:lak-certificate-creation}
 \end{figure}
+\vspace{-\medskipamount}
+\vspace{-\medskipamount}
 
 Modeling this protocol begins by initializing states for the Owner and
 CA. The Owner must have its LAK, IAK, and IAK certificate, and the CA
@@ -850,6 +867,8 @@ keys, all key values are specified to be pairwise distinct.
 % \caption{Parameters of LAK Provisioning Procedure}
 % \end{figure}
 
+\vspace{-\medskipamount}
+\vspace{-\medskipamount}
 \begin{figure}[hpbt]
 \begin{lstlisting}[language=Coq]
 Definition steps1to5_Owner : sequence :=
@@ -864,8 +883,9 @@ TPM2_Sign
 \caption{Owner's LAK Provisioning Protocol}
 \label{fig:lak_model_Owner}
 \end{figure}
+\vspace{-\medskipamount}
+\vspace{-\medskipamount}
 
-<<<<<<< HEAD
 The protocol is modeled in two parts: the Owner's steps (Steps 0-5)
 followed by the CA's steps (Steps 6-7).  Each part of the procedure is
 modeled using the initialized state and the sequential command
@@ -879,30 +899,6 @@ corresponds with exactly one command in the model, namely
 \verb|TPM2_Certify| for Step 1, \verb|MakeCSR_LDevID| for Step 2,
 \verb|TPM2_Hash| for Step 3, \verb|TPM2_Sign| for Step 4, and
 \verb|MakePair| for Step 5.
-=======
-
-%% \begin{figure}[hpbt]
-%% \begin{lstlisting}[language=Coq]
-%% Definition steps1to5_Owner : sequence :=
-%% TPM2_Certify pubLAK privIAK
-%% ;; MakeCSR_LDevID (signature (TPM2B_Attest pubLAK) privIAK) certIAK
-%% ;; TPM2_Hash
-%%     (TCG_CSR_LDevID (signature (TPM2B_Attest pubLAK) privIAK) certIAK)
-%% ;; TPM2_Sign 
-%%     (hash (TCG_CSR_LDevID (signature (TPM2B_Attest pubLAK) privIAK) certIAK))
-%%     privLAK
-%% ;; MakePair 
-%%     (TCG_CSR_LDevID (signature (TPM2B_Attest pubLAK) privIAK) certIAK) 
-%%     (signature
-%%       (hash
-%%         (TCG_CSR_LDevID
-%%           (signature (TPM2B_Attest pubLAK) privIAK) certIAK)) privLAK)
-%% ;; Done. 
-%% \end{lstlisting}
-%% \caption{Owner's LAK Provisioning Protocol}
-%% \label{fig:lak_model_Owner}
-%% \end{figure}
->>>>>>> eb641a1d482cecec760d2cd29ae5eb47be4f7263
 
 The CA's steps in Figure~\ref{fig:lak_model_CA} are more complex as
 they rely on the certificate request produced by the Owner. 
@@ -915,6 +911,8 @@ The model includes several additional parameters and criteria to serve
 as a method for referencing elements of the certificate request
 within proof statements.
 
+\vspace{-\medskipamount}
+\vspace{-\medskipamount}
 \begin{figure}[hpbt]
 \begin{lstlisting}[language=Coq]
 Definition steps_CA (msg:message) (iak lak:pubKey) (cert:signedCert) : Prop :=
@@ -936,6 +934,8 @@ end.
 \caption{CA's LAK Provisioning Protocol}
 \label{fig:lak_model_CA}
 \end{figure}
+\vspace{-\medskipamount}
+\vspace{-\medskipamount}
 
 Assurance A is proved under both scenarios simultaneously 
 by using only the CA's function. 
@@ -1097,6 +1097,8 @@ has good attributes; (B) the IAK is loaded on the same TPM as the EK;
 and (C) the EK certificate is valid. These assurances correspond with
 the Proof of Residency line A in Figure \ref{fig:cert_rel}.
 
+\vspace{-\medskipamount}
+\vspace{-\medskipamount}
 \begin{figure}[hbtp]
 \begin{enumerate}[itemsep=0pt,parsep=0pt,partopsep=0pt]
   \setcounter{enumi}{-1}
@@ -1132,6 +1134,8 @@ the Proof of Residency line A in Figure \ref{fig:cert_rel}.
   \caption{IAK Certificate Creation Protocol}
   \label{fig:iak-creation}
 \end{figure}
+\vspace{-\medskipamount}
+\vspace{-\medskipamount}
 
 % Modeling this protocol begins by defining parameters for the OEM and
 % CA. The OEM has its IAK, EK, EK certificate, and device identifying
@@ -1255,6 +1259,8 @@ and \verb|seq2| releases the secret nonce value \verb|g| into the OEM's
 final state. The CA's final steps are implicit in that the nonce in
 the challenge blob is the same nonce in the OEM's state.
 
+\vspace{-\medskipamount}
+\vspace{-\medskipamount}
 \begin{figure}[hptb]
 \begin{lstlisting}[language=Coq]
 Theorem iak_and_ek_in_TPM :
@@ -1275,6 +1281,8 @@ Theorem iak_and_ek_in_TPM :
 \caption{Final Verification Goal for IAK Provisioning Procedure}
 \label{fig:iak_goal}
 \end{figure}
+\vspace{-\medskipamount}
+\vspace{-\medskipamount}
 
 From here we prove that \verb|seq2| is a supersequence of the correct
 final steps of the OEM (i.e., Step 7). This proof relies on two
@@ -1296,7 +1304,7 @@ credentialed by the EK.
 % sequence containing this command implies that the EK and IAK are
 % loaded on the same TPM.  
 The composition of these intermediate proofs leads
-to our goal shown in Figure \ref{fig:iak_goal}.  Due to the extra
+to our goal shown in Figure~\ref{fig:iak_goal}.  Due to the extra
 parameters and criteria of the \verb|steps_CA| function, the proof
 statement shows that the inverse of the key contained in the EK
 certificate and the inverse of the key contained in the new
