@@ -51,7 +51,7 @@ Perry Alexander}
 %
 \begin{abstract}
   Provisioning TPM-based secure device identifiers must be verified
-  to ensure such identifiers are strongly bound to their devices.
+  to ensure they are strongly bound to their devices.
   Lack of such assurance jeopardizes high-integrity decisions and
   reporting that rely upon associating data with devices.  We develop
   models of two TCG provisioning protocols and verify they provide
@@ -78,16 +78,26 @@ use the identity of good entity.
 
 One method for implementing strong identity is a \emph{secure device
   identifier (DevID)}~\citep{DevIDSpec-IEEE} realized using a Trusted
-Platform Module (TPM) to generate and protect DevID instances.  First,
-the Trusted Computing Group DevID Specification~\citep{DevIDSpec-TCG}
-describes protocols for assuring DevID integrity and residency. These
-protocols are performed by a trusted Certificate Authority (CA)
-communicating with a certificate-requesting device.  They evaluate a
-cryptographic evidentiary chain linking a DevID to its TPM-containing
-device and produce a certificate assuring integrity.  Second, the TPM
-provides an attribute that when set during key creation
-prevents duplication or sharing of a key. Setting this attribute for
-a DevID key ensures its confidentiality.
+Platform Module (TPM) to generate and protect DevID instances. 
+The Trusted Computing Group DevID Specification~\citep{DevIDSpec-TCG}
+describes protocols for assuring DevID integrity and
+confidentiality. These protocols are performed by a trusted Certificate 
+Authority (CA) communicating with a certificate-requesting device.
+The protocols result in the formation of a cryptographic evidentiary chain 
+linking a DevID to its TPM-containing device and produce a certificate 
+assuring integrity.  Furhtermore, the TPM provides an attribute that when set during 
+key creation prevents duplication or sharing of a key.
+The protocols verify this attribute is set for a DevID assuring confidentiality.
+%% First,
+%% the Trusted Computing Group DevID Specification~\citep{DevIDSpec-TCG}
+%% describes protocols for assuring DevID integrity and residency. These
+%% protocols are performed by a trusted Certificate Authority (CA)
+%% communicating with a certificate-requesting device.  They evaluate a
+%% cryptographic evidentiary chain linking a DevID to its TPM-containing
+%% device and produce a certificate assuring integrity.  Second, the TPM
+%% provides an attribute that when set during key creation
+%% prevents duplication or sharing of a key. Setting this attribute for
+%% a DevID key ensures its confidentiality.
 
 Our work focuses on correctness of two certification protocols:
 (i) OEM Creation of an IAK Certificate based on an EK Certificate; and
@@ -105,22 +115,22 @@ certification protocols, and (iii) a recommendation for clarifying the
 IAK provisioning procedure.
 
 \section{DevIDs and TPMs}
-The Trusted Platform Module (TPM) is a microcontroller that complies
+The \emph{Trusted Platform Module (TPM)} is a microcontroller that complies
 with the ISO/IEC 11889:2015 international standard.  The TPM was
 designed by the Trusted Computing Group (TCG) to act as a hardware
 root-of-trust for PC system security.  TPMs are increasingly common
 making them a strong choice for building DevIDs.
 
 %%\subsection{TPM Keys and DevID Certificates}
-In the context of this work, a \emph{TPM key} is an asymmetric key generated
+In the context of this work, a \emph{TPM key} is an asymmetric key created
 and used by a TPM in a way that is consistent with its specified attributes.
 TPM key attributes are permanent, set at creation-time, and restrict how the key may
 be used. Attributes include \verb|FixedTPM| to control duplication,
 \verb|Sign| and \verb|Decrypt| to restrict the key usage, and
 \verb|Restricted| to limit operations to TPM-generated data only.  A
 restricted decryption key is called a \emph{storage key} while a
-restricted signing key is call an \emph{attestation key} or simply an
-AK.  The AK is so named for its unique ability to prove that a data
+restricted signing key is call an \emph{attestation key (AK)}.  
+The AK is so named for its unique ability to prove that a data
 object is contained in the same TPM as the key itself.
 
 %% Primary TPM keys are maintained internally by the TPM as roots for
@@ -194,8 +204,8 @@ Creator \\
 \end{table}
 %%\subsection{TPM Provisioning}
 
-All TPMs are shipped with a primary storage key called the \emph{Endorsement
-Key (EK)}.  The EK is a restricted, decryption key initialized
+All TPMs are shipped with an essential storage key called the \emph{Endorsement
+Key (EK)}.  The EK is a fixedTPM, restricted, decryption key initialized
 by the TPM manufacturer.  The EK has an associated certificate generated 
 by the TPM Foundry CA that binds the EK to a specific TPM. Although 
 the EK is not a DevID since it is not a signing key,
@@ -204,7 +214,7 @@ it serves a significant role in the provisioning of DevIDs.
 
 
 When a TPM is installed in a device by an original equipment manufacturer (OEM), 
-the OEM creates \emph{Initial Attestation Keys (IAKs)} - restricted, signing 
+the OEM creates \emph{Initial Attestation Keys (IAKs)} - fixedTPM, restricted, signing 
 keys. IAK certificates generated by the OEM CA 
 should provide definitive evidence that the associated IAK belongs to a specific 
 TPM-containing device. 
@@ -212,7 +222,6 @@ Trust for creation of a new DevID is based on an existing certificate.
 Therefore, proving that an IAK belongs to a specific device requires first
 binding the IAK to a specific TPM using the EK and then binding the TPM to a 
 specific device.
-
 
 Following the creation of IAKs, the OEM creates \emph{Initial Device
   Identifiers (IDevIDs)}. The OEM CA generates IDevID
@@ -245,7 +254,7 @@ need not be long-lived, may be created and installed at any time, and
 shared widely. LAK certificates and LDevID certificates are generated by
 the Owner CA. Proving that an LAK or an LDevID belongs to a specific device 
 requires binding the key to a specific TPM and device using an existing AK. 
-This AK may be an existing IAK or LAK. 
+This AK may be an IAK or LAK. 
 
 
 
@@ -465,7 +474,7 @@ The labeled transition system models command execution in the
 canonical fashion as a triple $(S,L,\rightarrow)$ where $S$ is a set
 of states, $L$ is a set of labels, and
 $\rightarrow \subseteq S \times L \times S$ is a labeled transition
-relation.  In this case, $S$ is defined as \verb|tpm_state * state|
+relation.  In this case, $S$ is defined as \verb|tpm_state|$\times$\verb|state|
 pairs; $L$ is the set of \verb|command| values; and $\rightarrow$ is
 the \verb|execute| relation defining single command execution.
 \verb|execute| is defined using an inductive proposition relating a
@@ -494,7 +503,6 @@ current state pair, a command, and a next state pair.
 Inductive command : Type :=
 | TPM2_Sign : message -> privKey -> command
 | TPM2_Certify : pubKey -> privKey -> command
-| TPM2_MakeCredential : message -> randType -> pubKey -> command
 | TPM2_ActivateCredential : message -> privKey -> privKey -> command
 | MakeCSR_IDevID : identifier -> signedCert -> pubKey -> command
 | MakeCSR_LDevID : message -> signedCert -> command
@@ -553,9 +561,8 @@ two are critical to CA protocol verification.  The \verb|TPM2_Certify|
 command provides proof that an object is loaded in the TPM by
 producing a signed \verb|TPM2B_Attest| structure. The command requires
 two inputs: (i) a public key to be certified; and (ii) a private key
-to sign the attestation structure. The private key must have the
-\verb|Sign| attribute set and must be loaded. To execute, the TPM
-verifies the public key parameter's inverse is also loaded.
+to sign the attestation structure. To execute, the TPM
+verifies that the public key parameter's inverse is loaded.
 
 % Messages produced by the \verb|TPM2_Sign| and \verb|TPM2_Certify|
 % commands are defined using the \verb|signature| constructor. A
@@ -715,19 +722,25 @@ Definition sufficient seq minTPM min : Prop :=
 We use the minimal initial state to prove that an unknown key is
 loaded on the same TPM as a previously-certified key if the
 certificate-requesting entity successfully follows the TCG's
-recommended procedure.  Specifically, the key whose presence is
-required is included in the minimal initial state for protocol
-execution.
+recommended procedure.  
+%% Specifically, the key whose presence is
+%% required is included in the minimal initial state for protocol
+%% execution.
 
 \subsection{Supersequence}
 
-A CA will only issue a certificate if it receives a valid certificate
-request.  Arbitrary certificate request production is described in
-Figure~\ref{fig:csr-production}. The certificate-requesting
+A CA will only issue a certificate if it receives a valid \emph{certificate
+signing request (CSR)}.  Arbitrary CSR production shown in
+Figure~\ref{fig:csr-production} can be described by these statements: 
+the certificate-requesting
 entity executes some arbitrary command sequence; the initial state
-pair contains only messages that cannot be generated; the command
-sequence produces some message in the final state; and a CA determines
-that the message is a valid certificate request.
+contains only messages that cannot be generated by the certificate-requesting 
+entity itself; 
+the command sequence produces some message in the final state; and a
+CA determines that the message is a valid CSR.
+We constrain the initial state of the certificate-requesting entity to
+include only those that it cannot generate to ensure the contents of
+the produced CSR are fresh. 
 
 % A CA will only issue a certificate if it receives a valid
 % certificate request. We model request validity by constraining the
@@ -754,23 +767,22 @@ Definition arbitrary_CSR_production (steps_CA : message -> Prop) : Prop :=
   \label{fig:csr-production}
 \end{figure}
 
-We constrain the initial state of the certificate-requesting entity to
-include only those messages needed for the request that cannot be
-generated by a command sequence.  To ensure the contents of
-the certificate request are fresh, the initial state may contain only
-keys and certificates.
 
-To produce a valid certificate request, specific commands
+%% In this case, the initial state may 
+%% contain only keys and certificates.
+
+To produce a valid CSR, specific commands
 must be executed in a specific order.  Due to the shape of a valid
 request and the checks performed by a CA, we can prove that any
 command sequence that the certificate-requesting entity performed to
 generate the request is a supersequence of the TCG-recommended procedure. 
 A list is a supersequence of another list if and only if all the elements 
 of the second list occur in order in the first --- the elements need not
-occur consecutively.  With this knowledge of the
-certificate-requesting entity's behavior, we can apply an abbreviated
-version of the minimal initial state technique to complete
-verification.
+occur consecutively.  
+%% With this knowledge of the
+%% certificate-requesting entity's behavior, we can apply an abbreviated
+%% version of the minimal initial state technique to complete
+%% verification.
 
 \section{Identity Provisioning}
 
@@ -896,8 +908,8 @@ corresponds with exactly one command in the model, namely
 \verb|MakePair| for Step 5.
 
 The CA's steps in Figure~\ref{fig:lak_model_CA} are more complex as
-they rely on the certificate request produced by the Owner. 
-First, the CA waits to receive a certificate request from the
+they rely on the certificate signing request produced by the Owner. 
+First, the CA waits to receive a request from the
 Owner. The request must be in a specific
 format to be considered valid. The CA then executes Step 6 of the
 procedure defined by the sequence within \verb|seq_execute|. If
