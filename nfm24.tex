@@ -774,9 +774,10 @@ attributes, or previously-issued certificates providing the basis for
 the resulting certificate chain. We verify each protocol guarantees
 its associated properties.
 
-We consider two protocol execution scenarios: (i) the
-certificate-requesting entity and the CA both execute their steps
-correctly; and (ii) only the CA executes its steps correctly.  Because
+We consider two protocol execution scenarios: (i) the CA and 
+certificate-requesting entity perform the exact steps described 
+by the specification; and (ii) only the 
+CA is trusted to perform the steps described by the specification.  Because
 trust in a new certificate is rooted in an existing certificate, these
 scenarios assume a precondition that previously-issued certificates
 have properties guaranteed by their provisioning protocols.
@@ -821,7 +822,7 @@ Trust relation from IAK to LAK in Figure \ref{fig:cert_rel}.
 
 Modeling this protocol begins by initializing states for the Owner and
 CA. The Owner must have its LAK, IAK, and IAK certificate, and the CA
-must have its own key and the public key of the OEM's CA.  
+must have its own key and the public key of the OEM CA.  
 % Private key values are represented by taking the inverse of the corresponding
 % public key and are stored in the \verb|privLAK|, \verb|privIAK|, and
 % \verb|privCA| variables. 
@@ -925,8 +926,8 @@ execution implies the LAK has all attributes required to be an
 attestation key.
 
 We now verify that the LAK and IAK are on the same TPM under the
-conditions of the first scenario where the Owner and the CA are both
-trusted to execute their steps correctly. Recall that this proof
+conditions of the first scenario where both the Owner and CA perform 
+the exact steps described by the specification. Recall that this proof
 trusts that the previously-performed IAK provisioning guarantees its
 associated properties, specifically that the IAK has good attributes.
 
@@ -965,10 +966,10 @@ minimal initial state leads to the conclusion that the LAK and IAK
 must be loaded on the same TPM for the Owner to execute its steps.
 Therefore, we have now confirmed the simultaneous presence of the LAK
 and IAK is guaranteed by the protocol when we assume that both the
-Owner and the CA are trusted to execute their steps correctly.
+Owner and the CA are trusted to execute their prescribed steps.
 
-We now attempt verify the same goal under the second scenario where
-only the CA is trusted to execute its steps correctly.
+We now attempt to verify the same goal under the second scenario where
+only the CA is trusted to perform the steps described by the specification.
 We define a cascading collection of recursive functions to determine
 whether a given command sequence is a supersequence of
 \verb|steps1to5_Owner|.  Using the properties provided by the
@@ -1140,8 +1141,8 @@ The provisioning procedure may be viewed as the composition of four
 parts: the OEM's initial steps (Steps 0-4) followed by the CA's
 initial steps (Steps 5-6) followed by the OEM's final step (Step 7)
 followed by the CA's final steps (Steps 8-9). The initial steps of the
-OEM and the OEM's CA are constructed similarly to the steps of the
-Owner and the Owner's CA respectively.  The OEM's final step is
+OEM and the OEM CA are constructed similarly to the steps of the
+Owner and the Owner CA respectively.  The OEM's final step is
 naturally constructed as a simple function. First the OEM waits to
 receive a challenge blob from the CA, then the OEM executes Step
 7. The CA's final steps are implicit in the proof statements and do
@@ -1151,7 +1152,7 @@ Proving the IAK has good attributes is trivial and proceeds
 identically to the corresponding proof in the previous
 section. Proving the EK certificate is valid is also quite similar
 since the CA checks the signature on the EK certificate with the
-public key from the TPM Manufacturer's CA.
+public key from the TPM Foundry CA.
 % The command
 % \verb|CheckCert (Cert k0 id0 k_ca') pubTM| in the CA's function
 % corresponds with Step 5 of the provisioning procedure. The CA's
@@ -1204,8 +1205,9 @@ public key from the TPM Manufacturer's CA.
 % \label{fig:iak_model}
 % \end{figure}
 
-We now verify the IAK and EK are loaded on the same TPM when the OEM
-and the CA are both trusted to execute their steps correctly. We
+We now verify the IAK and EK are loaded on the same TPM when the OEM and 
+and CA perform the exact steps described 
+by the specification. We
 implement the same strategy as before showing that the private IAK and
 private EK are contained in the OEM's minimal initial
 \verb|tpm_state|. We build a minimal initial state pair for the
@@ -1217,8 +1219,9 @@ is credentialed by the EK. The two required proofs to determine
 minimality proceed similarly to the corresponding proof in the
 previous section.
 
-We now verify the same goal assuming only the CA is trusted to execute
-its steps correctly.  We modify the \verb|arbitrary_CSR_production|
+We now verify the same goal assuming only only the 
+CA is trusted to perform the steps described by the 
+specification.  We modify the \verb|arbitrary_CSR_production|
 definition so that we can describe the additional interaction that
 takes place between the OEM and the CA. We now say that the OEM
 executes some arbitrary sequence of commands \verb|seq1|; \verb|seq1|
