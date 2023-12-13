@@ -1057,7 +1057,7 @@ The procedure uses the previously provisioned IAK to prove the new LAK
 is loaded on the same TPM and thus contained in the device identified
 by the IAK certificate. Thus, when issuing the LAK certificate, the CA
 should use the same device identifying information as the IAK
-certificate's Subject field. To summarize, that keys have good
+certificate's Subject field. To summarize, that the IAK has good
 attributes is guaranteed by the attribute check performed by the CA
 and simultaneous presence of the LAK and IAK on the TPM is guaranteed
 by the IAK's \verb|Restricted| attribute and the signed
@@ -1066,10 +1066,11 @@ by the IAK's \verb|Restricted| attribute and the signed
 \subsection{OEM Creation of IAK Certificate based on EK Certificate}
 
 The TCG's specification claims the procedure in
-Figure~\ref{fig:iak-creation} guarantees three assurances: (A) the IAK
-has good attributes; (B) the IAK is loaded on the same TPM as the EK;
-and (C) the EK certificate is valid. These assurances correspond with
-the Proof of Residency line A in Figure \ref{fig:cert_rel}.
+Figure~\ref{fig:iak-creation} guarantees three properties: the IAK
+has good attributes; the IAK is loaded on the same TPM as the EK; and
+the EK certificate is valid. These assurances correspond with the
+Proof of Residency link from the EK to the IAK in Figure
+\ref{fig:cert_rel}.
 
 \begin{figure}[hbtp]
 \vspace{-\medskipamount}
@@ -1132,9 +1133,7 @@ the Proof of Residency line A in Figure \ref{fig:cert_rel}.
 
 The procedure from Figure~\ref{fig:iak-creation} is similar to the one
 described in Figure~\ref{fig:lak-certificate-creation}. 
-% All steps except for step 1 and
-% part of step 6 are included. 
-We focus on the details that differ from
+Thus, we focus on the details that differ from
 the previous verification process.
 
 The provisioning procedure may be viewed as the composition of four
@@ -1148,10 +1147,11 @@ receive a challenge blob from the CA, then the OEM executes Step
 7. The CA's final steps are implicit in the proof statements and do
 not require an explicit definition.
 
-Proving Assurance A is trivial and proceeds identically to the
-corresponding proof in the previous section. Proving Assurance C is
-also quite similar since the CA checks the signature on the EK
-certificate with the public key of the TPM Manufacturer's CA. 
+Proving the IAK has good attributes is trivial and proceeds
+identically to the corresponding proof in the previous
+section. Proving the EK certificate is valid is also quite similar
+since the CA checks the signature on the EK certificate with the
+public key from the TPM Manufacturer's CA.
 % The command
 % \verb|CheckCert (Cert k0 id0 k_ca') pubTM| in the CA's function
 % corresponds with Step 5 of the provisioning procedure. The CA's
@@ -1204,30 +1204,30 @@ certificate with the public key of the TPM Manufacturer's CA.
 % \label{fig:iak_model}
 % \end{figure}
 
-We now verify Assurance B when the OEM and the CA are both trusted to
-execute their steps correctly. We implement the same strategy as
-before showing that the private IAK and private EK are contained in
-the OEM's minimal initial \verb|tpm_state|. We build a minimal initial
-state pair for the composition of \verb|steps1to4_OEM| and
-\verb|step7_OEM| using the following intuition: (i) the EK certificate
-and public IAK are known to the Owner because they are included in the
-CSR; and (ii) the private IAK and private EK are loaded on the same TPM
-because the IAK is credentialed by the EK. The two required proofs to
-determine minimality proceed similarly to the corresponding proof in
-the previous section.
+We now verify the IAK and EK are loaded on the same TPM when the OEM
+and the CA are both trusted to execute their steps correctly. We
+implement the same strategy as before showing that the private IAK and
+private EK are contained in the OEM's minimal initial
+\verb|tpm_state|. We build a minimal initial state pair for the
+composition of \verb|steps1to4_OEM| and \verb|step7_OEM| using the
+following intuition: (i) the EK certificate and public IAK are known
+to the Owner because they are included in the CSR; and (ii) the
+private IAK and private EK are loaded on the same TPM because the IAK
+is credentialed by the EK. The two required proofs to determine
+minimality proceed similarly to the corresponding proof in the
+previous section.
 
-We now attempt to verify the same goal assuming only the CA is trusted
-to execute its steps correctly. 
-We modify the \verb|arbitrary_CSR_production| definition 
-so that we can describe the additional interaction
-that takes place between the OEM and the CA. We now say that
-the OEM executes some arbitrary sequence of commands \verb|seq1|;
-\verb|seq1| produces some message \verb|csr| in the OEM's intermediate
-state; the OEM's initial state contains only messages that need not be
-generated; the CA executes its steps on \verb|csr| and sends the
-challenge blob \verb|encryptedCredential (hash (publicKey iak)) g ek|
-to the OEM; the OEM executes some other arbitrary command sequence \verb|seq2|;
-and \verb|seq2| releases the secret nonce value \verb|g| into the OEM's
+We now verify the same goal assuming only the CA is trusted to execute
+its steps correctly.  We modify the \verb|arbitrary_CSR_production|
+definition so that we can describe the additional interaction that
+takes place between the OEM and the CA. We now say that the OEM
+executes some arbitrary sequence of commands \verb|seq1|; \verb|seq1|
+produces some message \verb|csr| in the OEM's intermediate state; the
+OEM's initial state contains only messages that need not be generated;
+the CA executes its steps on \verb|csr| and sends the challenge blob
+\verb|encryptedCredential (hash (publicKey iak)) g ek| to the OEM; the
+OEM executes a second arbitrary command sequence \verb|seq2|; and
+\verb|seq2| releases the secret nonce value \verb|g| into the OEM's
 final state. The CA's final steps are implicit in that the nonce in
 the challenge blob is the same nonce in the OEM's state.
 
@@ -1256,13 +1256,13 @@ Theorem iak_and_ek_in_TPM :
 
 From here we prove that \verb|seq2| is a supersequence of the OEM's
 correct final steps (i.e., Step 7). This proof uses two important
-properties of sequential execution. The first being that one cannot
+properties of sequential execution. The first is that one cannot
 produce a random number in its final state without an encrypted
-credential containing that number in its initial state. The second
-being the converse of the first, one cannot produce an encrypted
-credential containing a particular random number in its final state
-without that number or an encrypted credential containing that number
-in its initial state.
+credential containing that number in its initial state. The second is
+converse of the first, one cannot produce an encrypted credential
+containing a particular random number in its final state without that
+number or an encrypted credential containing that number in its
+initial state.
 
 We reuse the intuition from the first scenario to show that the private
 IAK and private EK are loaded on the same TPM if the IAK is
@@ -1278,17 +1278,17 @@ to our goal shown in Figure~\ref{fig:iak_goal}.  Due to the extra
 parameters and criteria of the \verb|steps_CA| function, the proof
 statement shows that the inverse of the key contained in the EK
 certificate and the inverse of the key contained in the new
-certificate are loaded on the same TPM. This is precisely the
-assertion described by Assurance B.
+certificate are loaded on the same TPM. This is precisely that the IAK
+and EK are loaded on the same TPM.
 
-In conclusion, we use the previously-certified EK to prove that the new
-IAK is loaded on the same TPM as itself. When issuing the IAK
+In conclusion, we use the previously-certified EK to prove that the
+new IAK is loaded on the same TPM as itself. When issuing the IAK
 certificate, the CA uses the device identifying information from the
 recieved CSR.  Assurance A is guaranteed by the attribute check
 performed by the CA, Assurance B is guaranteed by the EK's
 \verb|Restricted| attribute and the secret contained in the challenge
-blob, and Assurance C is guaranteed by the signature check on the EK
-certificate performed by the CA.
+blob, and that the EK and IAK are simultaneously present is guaranteed
+by the signature check on the EK certificate performed by the CA.
 
 Our analysis revealed a potential inconsistency in how the IAK
 provisioning procedure is described. The procedure provides no
@@ -1306,8 +1306,8 @@ Even the attestation variation of the IAK provisioning procedure does
 not attempt verification. This variation uses a quote over selected
 PCRs to show only that the device is running the appropriate, trusted
 firmware. All devices with the same model number have an identical
-golden hash value that represents its expected PCR digest.  Although
-this check guarantees that the TPM containing the IAK is on a specific
+golden hash that represents its expected PCR digest.  Although this
+check guarantees that the TPM containing the IAK is on a specific
 \textit{type} of device it does not guarantee that the TPM is on a
 specific \emph{device}.
 
@@ -1317,12 +1317,10 @@ measurement that contains a device's unique identifier. In this way,
 each individual device has a unique golden hash value and its identity
 can be uniquely determined.  Due to integrity guarantees of the TPM's
 PCR mechanism, this modification provides definitive evidence that a
-key belongs to a specific device. A weakness of this modification
-is it requires a large database of golden hash values. Maintaining
-such a database in dynamic environments with many devices would be
-challenging.  however, the approach will be useful in critical systems
-where it is imperative to know the precise identity of a specific
-device.
+key belongs to a specific device. A weakness of this modification is
+it requires a large database of golden hash values.  However, the
+approach will be useful in critical systems where it is imperative to
+know the precise identity of a specific device.
 %
 %
 %
