@@ -676,20 +676,23 @@ sequence execution is a partial function.
 \section{Proof Techniques}
 
 The TCG describes several provisioning protocols~\citep{DevIDSpec-TCG}
-that maintain and verify a cryptographic evidentiary chain linking a
+that maintain a cryptographic evidentiary chain linking a
 DevID to a specific TPM and device using TPM-residency. For each
 protocol, the specification outlines steps for the CA and the
-certificate-requesting entity.  We will use two novel proof techniques
-to verify TPM-residency---\emph{minimal initial state} and
-\emph{supersequence}---with respect to these steps.
+certificate-requesting entity.  To verifythe assurances provided
+by these protocols, we consider two scenarios: (i) the CA and 
+certificate-requesting entity
+perform the exact steps described by the specification; and (ii) only the 
+CA is trusted to perform the steps described by the specification.
+We will use two novel proof techniques
+to verify TPM-residency of the new DevID---\emph{minimal initial state} and
+\emph{supersequence}.
 
 \subsection{Minimal Initial State}
 
 A minimal initial state aims to quantitatively describe the minimal
-prerequisites for successfully executing a command sequence.  Instead
-of directly proving the presence of a key in a final state, we use
-monotonicity of command execution and the key's presence in a minimal
-initial state to prove the key's presence.  Given a command sequence,
+prerequisites for successfully executing a command sequence.  
+Given a command sequence,
 a minimal initial state is defined as the smallest initial state that
 allows successful execution. The proof obligation describing this
 property in Figure~\ref{fig:minimal-initial-state} has two parts: (i)
@@ -758,7 +761,7 @@ certificate-requesting entity performed to generate the request is a
 supersequence of the TCG-recommended procedure.  A list is a
 supersequence of another list if and only if all the elements of the
 second list occur in order in the first---the elements need not occur
-consecutively. We use the supersequence techinque to verify the second
+consecutively. We use the supersequence technique to verify the second
 scenario to gain necessary knowledge of the unknown command sequence
 executed by the certificate-requesting entity.
 
