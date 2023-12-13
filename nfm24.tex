@@ -557,13 +557,13 @@ Inductive command : Type :=
 % \verb|state|. If the key does have the \verb|Restricted| attribute
 % set, the message must be in the current \verb|tpm_state|.
 
-While most TPM command behaviors are easily inferred from their name,
-two are critical to CA protocol verification.  The \verb|TPM2_Certify|
-command provides proof that an object is loaded in the TPM by
-producing a signed \verb|TPM2B_Attest| structure. The command requires
-two inputs: (i) a public key to be certified; and (ii) a private key
-to sign the attestation structure. To execute, the TPM
-verifies that the public key parameter's inverse is loaded.
+While most TPM command behaviors are clear from their name, two are
+critical to CA protocol verification and warrant explanation.  The
+\verb|TPM2_Certify| command provides proof that an object is loaded in
+the TPM by producing a signed \verb|TPM2B_Attest| structure. The
+command requires two inputs: (i) a public key to be certified; and
+(ii) a private key to sign the attestation structure. To execute, the
+TPM verifies that the public key parameter's inverse is loaded.
 
 % Messages produced by the \verb|TPM2_Sign| and \verb|TPM2_Certify|
 % commands are defined using the \verb|signature| constructor. A
