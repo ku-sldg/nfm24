@@ -51,7 +51,7 @@ Perry Alexander}
 %
 \begin{abstract}
   Provisioning TPM-based secure device identifiers must be verified
-  to ensure such identifiers are strongly bound to their devices.
+  to ensure they are strongly bound to their devices.
   Lack of such assurance jeopardizes high-integrity decisions and
   reporting that rely upon associating data with devices.  We develop
   models of two TCG provisioning protocols and verify they provide
@@ -78,16 +78,26 @@ use the identity of good entity.
 
 One method for implementing strong identity is a \emph{secure device
   identifier (DevID)}~\citep{DevIDSpec-IEEE} realized using a Trusted
-Platform Module (TPM) to generate and protect DevID instances.  First,
-the Trusted Computing Group DevID Specification~\citep{DevIDSpec-TCG}
-describes protocols for assuring DevID integrity and residency. These
-protocols are performed by a trusted Certificate Authority (CA)
-communicating with a certificate-requesting device.  They evaluate a
-cryptographic evidentiary chain linking a DevID to its TPM-containing
-device and produce a certificate assuring integrity.  Second, the TPM
-provides an attribute that when set during key creation
-prevents duplication or sharing of a key. Setting this attribute for
-a DevID key ensures its confidentiality.
+Platform Module (TPM) to generate and protect DevID instances. 
+The Trusted Computing Group DevID Specification~\citep{DevIDSpec-TCG}
+describes protocols for assuring DevID integrity and
+confidentiality. These protocols are performed by a trusted Certificate 
+Authority (CA) communicating with a certificate-requesting device.
+The protocols result in the formation of a cryptographic evidentiary chain 
+linking a DevID to its TPM-containing device and produce a certificate 
+assuring integrity.  Furhtermore, the TPM provides an attribute that when set during 
+key creation prevents duplication or sharing of a key.
+The protocols verify this attribute is set for a DevID assuring confidentiality.
+%% First,
+%% the Trusted Computing Group DevID Specification~\citep{DevIDSpec-TCG}
+%% describes protocols for assuring DevID integrity and residency. These
+%% protocols are performed by a trusted Certificate Authority (CA)
+%% communicating with a certificate-requesting device.  They evaluate a
+%% cryptographic evidentiary chain linking a DevID to its TPM-containing
+%% device and produce a certificate assuring integrity.  Second, the TPM
+%% provides an attribute that when set during key creation
+%% prevents duplication or sharing of a key. Setting this attribute for
+%% a DevID key ensures its confidentiality.
 
 Our work focuses on correctness of two certification protocols:
 (i) OEM Creation of an IAK Certificate based on an EK Certificate; and
@@ -898,8 +908,8 @@ corresponds with exactly one command in the model, namely
 \verb|MakePair| for Step 5.
 
 The CA's steps in Figure~\ref{fig:lak_model_CA} are more complex as
-they rely on the certificate request produced by the Owner. 
-First, the CA waits to receive a certificate request from the
+they rely on the certificate signing request produced by the Owner. 
+First, the CA waits to receive a request from the
 Owner. The request must be in a specific
 format to be considered valid. The CA then executes Step 6 of the
 procedure defined by the sequence within \verb|seq_execute|. If
