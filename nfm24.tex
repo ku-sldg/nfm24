@@ -791,26 +791,24 @@ creation of an LAK certificate based on an IAK certificate; and (ii)
 OEM creation of an IAK certificate based on an EK certificate. For
 each protocol, the TCG specification outlines steps for the CA and the
 certificate-requesting entity. The specification claims that each
-protocol provides certain assurances. Each assurance manifests as
-an assertion regarding either TPM-residency, key attributes, or
-previously-issued certificates and provides the basis for the
-resulting cryptographic evidentiary chain formed by a chain of
-certificates. We verify that each protocol guarantees its associated
-assurances, thereby determining their correctness.
+protocol provides certain assurances. Each assurance manifests as an
+assertion about TPM-residency, key attributes, or previously-issued
+certificates and provides the basis for the resulting cryptographic
+evidentiary chain formed by a certificate chain. We verify that each
+protocol guarantees its associated assurances.
 
 When verifying these goals, we consider two scenarios: (i) the
-certificate-requesting entity and the CA are both trusted to execute
-their steps correctly; and (ii) only the CA is trusted to execute its
-steps correctly.  Because trust for a new certificate is rooted in an
-existing certificate, these scenarios assume the precondition that
-previously-issued certificates imply the assurances guaranteed by
-their provisioning protocols.
+certificate-requesting entity and the CA are both execute their steps
+correctly; and (ii) only the CA executes its steps correctly.  Because
+trust in a new certificate is rooted in an existing certificate, these
+scenarios assume the precondition that previously-issued certificates
+have properties guaranteed by their provisioning protocols.
 
 \subsection{Owner Creation of LAK Certificate based on IAK Certificate}
 
 The TCG's specification claims the protocol for creating an LAK
 certificate in Figure~\ref{fig:lak-certificate-creation} provides
-these assurances: (A) the LAK has good attributes; and (B) the LAK is
+two assurances: (A) the LAK has good attributes; and (B) the LAK is
 loaded on the same TPM as the IAK. These assurances correspond with
 the Chain of Trust relation from IAK to LAK in Figure \ref{fig:cert_rel}.
 
