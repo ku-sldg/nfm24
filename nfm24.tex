@@ -13,7 +13,7 @@
 \usepackage{array}
 \usepackage{enumitem}
 %\usepackage{cite}
-\usepackage[numbers]{natbib}
+\usepackage[numbers,sectionbib]{natbib}
 % If you use the hyperref package, please uncomment the following line
 % to display URLs in blue roman font according to Springer's eBook style:
 % \renewcommand\UrlFont{\color{blue}\rmfamily}
@@ -223,15 +223,14 @@ Therefore, proving that an IAK belongs to a specific device requires first
 binding the IAK to a specific TPM using the EK and then binding the TPM to a 
 specific device.
 
-
-Following the creation of IAKs, the OEM creates
-\emph{Initial Device Identifiers (IDevIDs)} - fixedTPM, signing keys. 
-The OEM CA generates the IDevID certificates.
-Proving that an IDevID belongs to a specific device requires binding the IDevID
-to a specific TPM and device using an IAK.
-IAKs and IDevIDs are permanent, unique identifiers of TPM-containing 
-devices, intended to be long-lived and usable for the lifetime of the device. 
-As such, they should be used sparingly to limit the risk of compromise.
+Following the creation of IAKs, the OEM creates \emph{Initial Device
+  Identifiers (IDevIDs)}. The OEM CA generates IDevID
+certificates. Proving that an IDevID belongs to a specific device
+requires binding the IDevID to a specific TPM and device using an IAK.
+IAKs and IDevIDs are permanent, unique identifiers of TPM-containing
+devices, intended to be long-lived and usable for the device's
+lifetime.  They should be used sparingly to limit the risk of
+compromise.
 
 % An AK may only sign objects produced by the TPM. This includes
 % TPM-internal structures such as platform configuration registers,
@@ -378,9 +377,9 @@ entity.
 
 The model defines a \verb|pubKey| and \verb|privKey| type for public
 keys and private keys respectively. A key of either type requires a
-unique identifier and a sequence of boolean values describing whether
-a particular key attribute is set or not set. An asymmetric key pair is a
-\verb|pubKey| and a \verb|privKey| with the same identifier and
+unique identifier and a sequence of boolean values indicating the
+presence of key attributes. An asymmetric key pair is a
+\verb|pubKey| and a \verb|privKey| pair with the same identifier and
 attributes.
 
 % \begin{lstlisting}[language=Coq]
@@ -394,7 +393,7 @@ attributes.
 Certificates are defined by the \verb|signedCert| type consisting of a
 public key, an identifier, and a private key. The identifier
 represents the certificate's Subject field and may include information
-describing either the TPM or the device. The private key parameter
+describing the TPM or the device. The private key parameter
 denotes the CA's key that performed the signature over the
 certificate.
 
@@ -460,7 +459,7 @@ messages.  For example, given a message of the form
 decryption key is also available.  Additional messages may be derived
 from signed messages, \verb|TPM2B_Attest| structures, certificate
 signing requests (CSRs), certificates, and message pairs. Other
-messages either contain no additional information or information is
+messages contain no additional information or information is
 concealed.  Message inference is modeled by a
 recursive function \verb|inferFrom| and an equivalent inductive
 proposition \verb|inferrable|.
@@ -1293,15 +1292,15 @@ Theorem iak_and_ek_in_TPM :
 \label{fig:iak_goal}
 \end{figure}
 
-From here we prove that \verb|seq2| is a supersequence of the correct
-final steps of the OEM (i.e., Step 7). This proof relies on two
-important properties of sequential execution. The first being that one
-cannot produce a random number in its final state without an encrypted
+From here we prove that \verb|seq2| is a supersequence of the OEM's
+correct final steps (i.e., Step 7). This proof uses two important
+properties of sequential execution. The first being that one cannot
+produce a random number in its final state without an encrypted
 credential containing that number in its initial state. The second
-being approximately the converse of the first, one cannot produce an
-encrypted credential containing a particular random number in its
-final state without that number or an encrypted credential containing
-that number in its initial state.
+being the converse of the first, one cannot produce an encrypted
+credential containing a particular random number in its final state
+without that number or an encrypted credential containing that number
+in its initial state.
 
 We reuse the intuition from the first scenario to show that the private
 IAK and private EK are loaded on the same TPM if the IAK is
