@@ -85,10 +85,11 @@ Certificate Authority (CA) communicating with a certificate-requesting
 device.  The protocols result in the formation of a cryptographic
 evidentiary chain linking a DevID to its TPM-containing device and
 produce a DevID certificate assuring the DevID's integrity and
-confidentiality. If a signature check using the DevID is successful
-the certificate ensures the checked signature was produced by with the
-correct key on the correct TPM-containing device, correctly
-provisioned.  Thus the term \emph{secure device identifier}.
+confidentiality. If a signature check using the DevID key is
+successful the checked signature was produced by the correct private
+key.  The existence of the DevID certificate ensures the signing key
+resides only on the correct, properly provisioned TPM-containing
+device, thus satisfying requirements for strong identification.
 
 %% First,
 %% the Trusted Computing Group DevID Specification~\citep{DevIDSpec-TCG}
